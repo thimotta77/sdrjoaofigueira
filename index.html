@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0f0f1e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SDR JF"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Entrar · SDR João Figueira</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0D1117;--s:#141C2E;--s2:#1A2030;--bd:#2D3748;--acc:#C9A96E;--txt:#E5E7EB;--mt:#6B7280;}
+body{background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;padding:20px}
+.box{background:var(--s);border:1px solid var(--bd);border-radius:16px;padding:40px 36px;width:100%;max-width:400px}
+.logo-wrap{text-align:center;margin-bottom:32px}
+.logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--acc);letter-spacing:.02em}
+.logo-sub{font-size:11px;color:var(--mt);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--txt);text-align:center;margin-bottom:6px}
+.sub{font-size:13px;color:var(--mt);text-align:center;margin-bottom:28px}
+.fg{margin-bottom:16px}
+label{display:block;font-size:11px;color:var(--mt);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+input{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:13px 14px;color:var(--txt);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;-webkit-appearance:none}
+input:focus{border-color:var(--acc)}
+.btn{width:100%;padding:14px;background:var(--acc);border:none;border-radius:9px;color:#0D1117;font-weight:700;font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:opacity .2s;letter-spacing:.04em}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:active{opacity:.85}
+.forgot{display:block;text-align:center;margin-top:16px;font-size:13px;color:var(--mt);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;width:100%;padding:4px}
+.forgot:hover{color:var(--acc)}
+.err{background:#F8717111;border:1px solid #F8717144;border-radius:8px;padding:10px 14px;font-size:13px;color:#F87171;margin-top:12px;display:none}
+.err.show{display:block}
+.ok{background:#4ADE8011;border:1px solid #4ADE8044;border-radius:8px;padding:10px 14px;font-size:13px;color:#4ADE80;margin-top:12px;display:none}
+.ok.show{display:block}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.3);border-top-color:#0D1117;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.strength-bar{height:4px;border-radius:2px;margin-top:6px;transition:all .3s;background:#2D3748}
+.strength-fill{height:4px;border-radius:2px;width:0%;transition:all .3s}
+.strength-label{font-size:11px;margin-top:4px;transition:color .3s;color:var(--mt)}
+input.match-ok{border-color:#4ADE80}
+input.match-err{border-color:#F87171}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:42px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mt);padding:4px;display:flex;align-items:center;justify-content:center}
+.pw-eye:hover{color:var(--acc)}
+.pw-eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo-wrap">
+    <div class="logo">João Figueira</div>
+    <div class="logo-sub">Plataforma SDR · Social Selling</div>
+  </div>
+
+  <div id="view-login">
+    <div class="fg">
+      <label>E-mail</label>
+      <input type="email" id="email" placeholder="seu@email.com" autocomplete="email"/>
+    </div>
+    <div class="fg">
+      <label>Senha</label>
+      <div class="pw-wrap">
+        <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"/>
+        <button type="button" class="pw-eye" onclick="togglePw('senha',this)" tabindex="-1">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn" id="btn-login" onclick="fazerLogin()">Entrar na plataforma</button>
+    <div class="err" id="erro"></div>
+    <button class="forgot" onclick="mostrarReset()">Esqueci minha senha</button>
+  </div>
+
+  <div id="view-reset" style="display:none">
+    <p style="font-size:13px;color:var(--mt);text-align:center;margin-bottom:20px;line-height:1.6">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
+    <div class="fg">
+      <label>E-mail</label>
+      <input type="email" id="reset-email" placeholder="seu@email.com" autocomplete="email"/>
+    </div>
+    <button class="btn" id="btn-reset" onclick="enviarReset()">Enviar link de redefinição</button>
+    <div class="err" id="reset-erro"></div>
+    <div class="ok" id="reset-ok"></div>
+    <button class="forgot" onclick="voltarLogin()">← Voltar ao login</button>
+  </div>
+
+  <div id="view-new-password" style="display:none">
+    <p style="font-size:13px;color:var(--mt);text-align:center;margin-bottom:20px;line-height:1.6">Digite sua nova senha abaixo.</p>
+    <div class="fg">
+      <label>Nova senha</label>
+      <div class="pw-wrap">
+        <input type="password" id="new-senha" placeholder="••••••••" autocomplete="new-password" oninput="checkStrength(this.value);checkMatch()"/>
+        <button type="button" class="pw-eye" onclick="togglePw('new-senha',this)" tabindex="-1">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+      <div class="strength-label" id="strength-label">Digite sua senha</div>
+    </div>
+    <div class="fg">
+      <label>Confirmar nova senha</label>
+      <div class="pw-wrap">
+        <input type="password" id="new-senha-confirm" placeholder="••••••••" autocomplete="new-password" oninput="checkMatch()"/>
+        <button type="button" class="pw-eye" onclick="togglePw('new-senha-confirm',this)" tabindex="-1">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn" id="btn-new-senha" onclick="salvarNovaSenha()">Salvar nova senha</button>
+    <div class="err" id="new-senha-erro"></div>
+    <div class="ok" id="new-senha-ok"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL = "https://ewmgxgmyphpofpeftejr.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3bWd4Z215cGhwb2ZwZWZ0ZWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzAxNDUsImV4cCI6MjA4ODkwNjE0NX0.zUVgqLUZ4CJ0J8Obx295C8kq6XEuSOTqL1JRbcUnYmU";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// Detectar recovery em query params (?type=recovery ou ?token_hash=)
+// Supabase v2 PKCE envia como query string, não como hash
+const urlParams = new URLSearchParams(window.location.search);
+const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
+const isRecoveryURL = 
+  urlParams.get('type') === 'recovery' ||
+  hashParams.get('type') === 'recovery' ||
+  urlParams.has('token_hash') ||
+  urlParams.has('code');
+
+let isRecoveryMode = isRecoveryURL;
+
+if(isRecoveryMode) {
+  // Mostrar tela de nova senha imediatamente enquanto SDK processa o token
+  mostrarView('new-password');
+}
+
+// onAuthStateChange registrado ANTES do getSession
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY') {
+    isRecoveryMode = true;
+    mostrarView('new-password');
+  } else if(event === 'SIGNED_IN' && !isRecoveryMode) {
+    window.location.href = "qualificador.html";
+  }
+});
+
+// getSession só redireciona se não for fluxo de recovery
+if(!isRecoveryMode) {
+  sb.auth.getSession().then(({data}) => {
+    if(data.session) window.location.href = "qualificador.html";
+  });
+}
+
+document.getElementById("senha").addEventListener("keydown", e=>{ if(e.key==="Enter") fazerLogin(); });
+document.getElementById("email").addEventListener("keydown",  e=>{ if(e.key==="Enter") fazerLogin(); });
+
+async function fazerLogin(){
+  const email = document.getElementById("email").value.trim();
+  const senha  = document.getElementById("senha").value;
+  const btn    = document.getElementById("btn-login");
+  const err    = document.getElementById("erro");
+  if(!email || !senha){ mostrarErro("Preencha e-mail e senha.", "erro"); return; }
+  btn.disabled = true; btn.textContent = "Entrando...";
+  err.classList.remove("show");
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if(error){
+    mostrarErro("E-mail ou senha incorretos.", "erro");
+    btn.disabled = false; btn.innerHTML = "Entrar na plataforma";
+  } else {
+    // Pequeno delay para o toast aparecer antes do redirect
+    window.location.href = "qualificador.html?welcome=1";
+  }
+}
+
+function mostrarView(view){
+  ["login","reset","new-password"].forEach(v => {
+    const el = document.getElementById("view-"+v);
+    if(el) el.style.display = "none";
+  });
+  const target = document.getElementById("view-"+view);
+  if(target) target.style.display = "block";
+}
+
+function mostrarReset(){
+  mostrarView("reset");
+  document.getElementById("reset-email").value = document.getElementById("email").value || "";
+}
+
+function voltarLogin(){
+  mostrarView("login");
+  document.getElementById("reset-erro").classList.remove("show");
+  document.getElementById("reset-ok").classList.remove("show");
+}
+
+async function enviarReset(){
+  const email = document.getElementById("reset-email").value.trim();
+  const btn   = document.getElementById("btn-reset");
+  if(!email){ mostrarErro("Informe seu e-mail.", "reset-erro"); return; }
+  btn.disabled = true; btn.textContent = "Enviando...";
+  document.getElementById("reset-erro").classList.remove("show");
+  document.getElementById("reset-ok").classList.remove("show");
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://sdrjoaofigueira.vercel.app"
+  });
+  if(error){
+    mostrarErro("Erro ao enviar. Verifique o e-mail e tente novamente.", "reset-erro");
+    btn.disabled = false; btn.textContent = "Enviar link de redefinição";
+  } else {
+    const ok = document.getElementById("reset-ok");
+    ok.textContent = "Link enviado! Verifique sua caixa de entrada.";
+    ok.classList.add("show");
+    btn.disabled = false; btn.textContent = "Enviar link de redefinição";
+  }
+}
+
+function mostrarErro(msg, id){
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add("show");
+}
+
+function checkStrength(val){
+  const fill = document.getElementById("strength-fill");
+  const label = document.getElementById("strength-label");
+  if(!fill || !label) return;
+  let score = 0;
+  if(val.length >= 6)  score++;
+  if(val.length >= 10) score++;
+  if(/[A-Z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { pct:"0%",   color:"#2D3748", text:"Digite sua senha" },
+    { pct:"25%",  color:"#F87171", text:"Muito fraca" },
+    { pct:"50%",  color:"#FCD34D", text:"Fraca" },
+    { pct:"75%",  color:"#60A5FA", text:"Boa" },
+    { pct:"90%",  color:"#4ADE80", text:"Forte" },
+    { pct:"100%", color:"#4ADE80", text:"Muito forte" },
+  ];
+  const l = levels[score] || levels[0];
+  fill.style.width = l.pct;
+  fill.style.background = l.color;
+  label.style.color = l.color;
+  label.textContent = l.text;
+}
+
+function togglePw(id, btn){
+  const input = document.getElementById(id);
+  if(!input) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  // Trocar ícone: olho aberto / olho fechado
+  btn.querySelector('svg').innerHTML = isHidden
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+function checkMatch(){
+  const s1 = document.getElementById("new-senha")?.value;
+  const s2 = document.getElementById("new-senha-confirm");
+  if(!s2 || !s2.value) { s2?.classList.remove("match-ok","match-err"); return; }
+  if(s1 === s2.value){
+    s2.classList.add("match-ok"); s2.classList.remove("match-err");
+  } else {
+    s2.classList.add("match-err"); s2.classList.remove("match-ok");
+  }
+}
+
+async function salvarNovaSenha(){
+  const senha = document.getElementById("new-senha").value;
+  const confirma = document.getElementById("new-senha-confirm").value;
+  const btn = document.getElementById("btn-new-senha");
+  document.getElementById("new-senha-erro").classList.remove("show");
+  document.getElementById("new-senha-ok").classList.remove("show");
+  if(!senha || senha.length < 6){ mostrarErro("A senha deve ter pelo menos 6 caracteres.", "new-senha-erro"); return; }
+  if(senha !== confirma){ mostrarErro("As senhas não coincidem.", "new-senha-erro"); return; }
+  btn.disabled = true; btn.textContent = "Salvando...";
+  const { error } = await sb.auth.updateUser({ password: senha });
+  if(error){
+    mostrarErro("Erro ao salvar. O link pode ter expirado. Solicite um novo.", "new-senha-erro");
+    btn.disabled = false; btn.textContent = "Salvar nova senha";
+  } else {
+    const ok = document.getElementById("new-senha-ok");
+    ok.textContent = "Senha alterada com sucesso! Redirecionando...";
+    ok.classList.add("show");
+    setTimeout(()=>{ window.location.href = "qualificador.html"; }, 2000);
+  }
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>

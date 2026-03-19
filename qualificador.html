@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Qualificador CDP · João Figueira</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;--s:#141C2E;--s2:#1A2030;--bd:#2D3748;
+  --txt:#E5E7EB;--mt:#6B7280;--mt2:#1E2740;
+  --eq:#4ADE80;--q:#60A5FA;--n:#FCD34D;--nq:#F87171;
+  --acc:#C9A96E;
+}
+body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:60px}
+.header{background:var(--s);border-bottom:1px solid var(--bd);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{background:#C9A96E;border-radius:8px;padding:6px 10px;font-weight:800;font-size:12px;color:#fff;letter-spacing:1px;font-family:'Playfair Display',serif}
+.ht{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:#fff}
+.hs{font-size:11px;color:var(--mt)}
+.tabs{display:flex;gap:6px}
+.tab{background:transparent;border:1px solid var(--bd);border-radius:8px;padding:9px 20px;color:var(--mt);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all .2s;font-weight:500}
+.tab.active{border-color:var(--acc);color:var(--acc);background:#C9A96E15;font-weight:600}
+.tab:hover:not(.active){border-color:#4B5563;color:var(--txt)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 20px;font-size:13px;color:#fff;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none}
+.toast.show{display:block}
+.content{max-width:580px;margin:0 auto;padding:20px 16px}
+.card{background:var(--s);border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--bd)}
+.lbl{font-size:11px;color:var(--mt);margin-bottom:6px;letter-spacing:.8px;text-transform:uppercase}
+input[type=text]{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+input[type=text]:focus{border-color:var(--acc)}
+.section{background:var(--s);border-radius:10px;padding:16px;margin-bottom:12px;border:1px solid var(--bd)}
+.sec-title{font-size:12px;font-weight:700;color:#ccc;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-family:'Playfair Display',serif;letter-spacing:.5px;text-transform:uppercase}
+.sec-sub{margin-left:auto;font-size:11px;color:var(--mt);font-weight:400;text-transform:none;letter-spacing:0}
+.prog-bar{height:3px;background:var(--mt2);border-radius:2px;margin-bottom:14px;overflow:hidden}
+.prog-fill{height:100%;background:#C9A96E;border-radius:2px;transition:width .3s}
+.qrow{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--mt2)}
+.qrow:last-of-type{border-bottom:none}
+.qnum{font-size:10px;color:var(--mt);min-width:18px;text-align:right;padding-top:2px}
+.qlabel{flex:1;font-size:13px;color:#bbb;line-height:1.5}
+.qlabel small{display:block;font-size:11px;color:var(--mt);margin-top:2px}
+.wb{display:inline-block;margin-left:6px;font-size:10px;background:#FCD34D22;color:#FCD34D;border-radius:4px;padding:1px 5px}
+.qbtns{display:flex;gap:4px;flex-shrink:0}
+.qbtn{border:none;border-radius:5px;padding:6px 12px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--mt2);color:var(--mt);transition:all .15s;font-weight:500}
+.qbtn.sim.a{background:#4ADE8022;color:#4ADE80;outline:1px solid #4ADE80}
+.qbtn.nao.a{background:#F8717122;color:#F87171;outline:1px solid #F87171}
+.finbtn{width:100%;margin-top:14px;padding:13px;background:#C9A96E;border:none;border-radius:8px;color:#0D1117;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.04em}
+.secbtn{padding:12px 16px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--mt);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif}
+
+/* RESULT */
+.res-card{background:var(--s);border-radius:12px;padding:24px;border:2px solid var(--bd);margin-bottom:16px}
+.res-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.res-user{font-family:'Playfair Display',serif;font-weight:800;font-size:20px;color:#fff}
+.res-badge{border-radius:6px;padding:4px 14px;font-size:13px;font-weight:700;color:#fff;font-family:'Playfair Display',serif}
+.dial{display:flex;justify-content:center;margin:8px 0}
+.res-cls{text-align:center;font-weight:700;font-size:18px;margin-top:8px;font-family:'Playfair Display',serif}
+.res-act{text-align:center;font-size:13px;color:var(--mt);margin-top:4px;margin-bottom:16px}
+.dq-banner{text-align:center;font-size:15px;color:var(--nq);padding:20px 0}
+.breakdown{border-top:1px solid var(--bd);padding-top:12px;margin-bottom:16px}
+.bd-item{display:flex;gap:7px;padding:4px 0;align-items:flex-start;font-size:12px;line-height:1.4}
+.res-acts{display:flex;gap:10px}
+.icp-note{background:#C9A96E09;border:1px solid #C9A96E22;border-radius:8px;padding:12px 14px;font-size:12px;color:#aaa;margin-bottom:14px;line-height:1.6}
+.icp-note strong{color:#C9A96E}
+
+/* LEADS */
+.sum-row{display:flex;gap:8px;margin-bottom:14px}
+.sum-card{flex:1;background:var(--s);border:1px solid var(--bd);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s}
+.sum-num{font-size:22px;font-weight:700;font-family:'Playfair Display',serif}
+.sum-lbl{font-size:10px;color:var(--mt)}
+.empty{text-align:center;color:var(--mt2);padding:40px;font-size:14px}
+.lead-card{background:var(--s);border-radius:8px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--bd);border-left-width:4px;cursor:pointer}
+.lead-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.lead-name{font-weight:700;font-size:15px;color:#fff}
+.lead-date{font-size:11px;color:var(--mt)}
+.lead-right{display:flex;gap:6px;align-items:center}
+.spill{font-size:11px;border-radius:4px;padding:2px 7px;font-weight:700;border:1px solid}
+.cpill{font-size:11px;border-radius:4px;padding:2px 7px;color:#fff;font-weight:700}
+.delbtn{background:transparent;border:none;color:var(--mt);cursor:pointer;font-size:14px;padding:2px 6px}
+.delbtn:hover{color:var(--nq)}
+.lead-prof{font-size:12px;color:var(--mt);margin-top:2px}
+.lead-act{font-size:12px;color:var(--mt)}
+.hidden{display:none}
+
+/* profession chips */
+.prof-group{display:flex;gap:6px;flex-wrap:wrap}
+.prof-btn{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--mt);transition:all .15s;font-family:'DM Sans',sans-serif}
+.prof-btn.sel{border-color:var(--acc);color:var(--acc);background:#C9A96E18}
+
+/* INPUT DE DATA CUSTOMIZADO */
+.date-wrap{position:relative;display:inline-flex;align-items:center}
+.date-wrap input[type=date]{padding-right:30px;color-scheme:dark}
+.date-wrap input[type=date]::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;width:100%;height:100%;cursor:pointer}
+.date-cal-icon{position:absolute;right:8px;font-size:14px;pointer-events:none;line-height:1}
+
+/* ── MOBILE QUALIFICADOR ─────────────────────────────── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--s);border-top:1px solid var(--bd);z-index:50}
+.bottom-nav-inner{display:flex}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px;background:transparent;border:none;color:var(--mt);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;gap:4px;transition:color .2s}
+.bnav-btn.active{color:var(--acc)}
+.bnav-btn svg{width:20px;height:20px;stroke-width:1.8}
+@media(max-width:768px){
+  .tabs{display:none}
+  .bottom-nav{display:block}
+  body{padding-bottom:70px}
+  .header{padding:10px 14px;flex-wrap:nowrap;gap:8px}
+  .brand .hs{display:none}
+  .content{padding:14px 12px}
+  .section,.card{padding:12px}
+  input[type=text]{font-size:16px;padding:13px 12px}
+  .prof-btn{padding:8px 14px;font-size:13px}
+  .qbtn{padding:9px 14px;font-size:13px}
+  .finbtn{padding:15px;font-size:15px}
+  .secbtn{padding:13px 16px;font-size:13px}
+  .sum-num{font-size:18px}
+  .toolbar-toggle{display:flex !important}
+  .toolbar-body.closed{display:none !important}
+}
+@media(min-width:769px){
+  .toolbar-toggle{display:none !important}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL = "https://ewmgxgmyphpofpeftejr.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3bWd4Z215cGhwb2ZwZWZ0ZWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzAxNDUsImV4cCI6MjA4ODkwNjE0NX0.zUVgqLUZ4CJ0J8Obx295C8kq6XEuSOTqL1JRbcUnYmU";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let currentUser = null;
+</script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div id="loading-screen" style="position:fixed;inset:0;background:#0D1117;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px">
+  <div style="font-family:'Playfair Display',serif;font-size:22px;color:#C9A96E;font-weight:700">João Figueira</div>
+  <div style="width:36px;height:36px;border:3px solid #2D3748;border-top-color:#C9A96E;border-radius:50%;animation:spin .7s linear infinite"></div>
+  <div style="font-size:12px;color:#6B7280;font-family:'DM Sans',sans-serif">Carregando leads...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<div class="header">
+  <div class="brand">
+    <div class="logo">JF</div>
+    <div><div class="ht">Qualificador de Leads</div><div class="hs">ICP João Figueira · Alta Performance</div></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center"><a href="pipeline.html" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:6px 12px;color:#C9A96E;font-size:12px;text-decoration:none;font-family:'DM Sans',sans-serif">🚀 Pipeline</a><button onclick="sair()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:6px 12px;color:#6B7280;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Sair</button></div><div class="tabs">
+    <button class="tab active" id="tab-form" onclick="switchTab('form')">⚡ Avaliar</button>
+    <button class="tab" id="tab-leads" onclick="switchTab('leads')">📋 Leads (<span id="lcount">0</span>)</button>
+  </div>
+</div>
+
+<!-- TOOLBAR DE BACKUP -->
+<div style="background:#0D1117;border-bottom:1px solid #2D3748;">
+  <button class="toolbar-toggle" id="toolbar-toggle" onclick="toggleToolbar()" style="display:none;width:100%;padding:9px 16px;background:transparent;border:none;color:#6B7280;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;justify-content:space-between">
+    <span style="letter-spacing:.05em;text-transform:uppercase;font-size:11px">Dados</span>
+    <span id="toolbar-arrow">▼</span>
+  </button>
+  <div class="toolbar-body" id="toolbar-body" style="padding:8px 16px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <button onclick="exportBackup()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:8px 14px;color:#4ADE80;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">⬇️ Exportar Backup</button>
+    <button onclick="document.getElementById('import-input').click()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:8px 14px;color:#C9A96E;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">⬆️ Restaurar Backup</button>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importBackup(event)"/>
+    <div style="width:1px;height:18px;background:#2D3748;margin:0 2px"></div>
+    <button onclick="exportXLSX()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:8px 14px;color:#FCD34D;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">📊 Exportar Excel</button>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="content" id="view-form">
+  <div class="icp-note">
+    <strong>ICP João Figueira:</strong> Empresários, advogados, médicos, executivos e líderes. Renda mensal acima de R$10k ou empresa R$500k–R$5M/ano. Sobrecarregados, sem clareza de rotina, dispostos a investir em alta performance.
+  </div>
+
+  <div class="card">
+    <div class="lbl">@ do Instagram</div>
+    <input type="text" id="f-user" placeholder="ex: joaosilva"/>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Observação <span style="color:var(--mt);font-size:10px;text-transform:none;letter-spacing:0">(opcional)</span></div>
+    <input type="text" id="f-note" placeholder="ex: mencionou dificuldade com rotina, perfil muito ativo..."/>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Profissão identificada no perfil</div>
+    <div class="prof-group" id="prof-group">
+      <button class="prof-btn" onclick="selProf('Empresário',this)">🏢 Empresário</button>
+      <button class="prof-btn" onclick="selProf('Advogado',this)">⚖️ Advogado</button>
+      <button class="prof-btn" onclick="selProf('Médico',this)">🩺 Médico</button>
+      <button class="prof-btn" onclick="selProf('Executivo',this)">💼 Executivo</button>
+      <button class="prof-btn" onclick="selProf('Consultor',this)">📊 Consultor</button>
+      <button class="prof-btn" onclick="selProf('Profissional Liberal',this)">🎯 Prof. Liberal</button>
+      <button class="prof-btn" onclick="selProf('Outro',this)">❓ Outro</button>
+    </div>
+  </div>
+
+  <!-- DESQUALIFICADORES -->
+  <div class="section" id="sec-disq">
+    <div class="sec-title"><span style="color:var(--nq)">⛔</span> Desqualificadores imediatos <span class="sec-sub">SIM → NQ automático</span></div>
+    <div id="disq-rows"></div>
+  </div>
+
+  <!-- CRITÉRIOS -->
+  <div class="section hidden" id="sec-crit">
+    <div class="sec-title"><span style="color:var(--eq)">✅</span> Critérios de qualificação <span class="sec-sub" id="crit-prog">0/10 respondidos</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div id="crit-rows"></div>
+    <button class="finbtn" onclick="calcScore()">Calcular Score →</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="content hidden" id="view-result">
+  <div class="res-card" id="res-card">
+    <div class="res-top">
+      <div class="res-user" id="res-user">@lead</div>
+      <div class="res-badge" id="res-badge">AQ</div>
+    </div>
+    <div id="res-dial" class="dial"></div>
+    <div id="dq-banner" class="dq-banner hidden">⛔ Desqualificado imediatamente</div>
+    <div class="res-cls" id="res-cls"></div>
+    <div class="res-act" id="res-act"></div>
+    <div class="breakdown" id="breakdown"></div>
+    <div class="res-acts">
+      <button class="secbtn" onclick="resetForm()">← Novo lead</button>
+      <button class="finbtn" style="flex:1" onclick="saveLead()">💾 Salvar lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEADS -->
+<div class="content hidden" id="view-leads">
+  <!-- BUSCA POR PERFIL -->
+  <div style="position:relative;margin-bottom:10px">
+    <input type="text" id="search-lead" placeholder="🔍  Buscar por @perfil..." oninput="renderLeads()"
+      style="width:100%;background:#1A2030;border:1px solid #2D3748;border-radius:8px;padding:10px 12px 10px 14px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s"
+      onfocus="this.style.borderColor='#C9A96E'" onblur="this.style.borderColor='#2D3748'"/>
+    <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#6B7280;cursor:pointer;font-size:14px;padding:2px 6px">✕</button>
+  </div>
+
+  <!-- FILTROS DE QUALIFICAÇÃO -->
+  <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="cls-filter active-cls" data-cls="all" onclick="setFilter('all')" style="border-radius:6px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;border:1px solid #2D3748;background:#1A2030;color:#aaa;transition:all .15s">Todos</button>
+    <button class="cls-filter" data-cls="AQ" onclick="setFilter('AQ')" style="border-radius:6px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #4ADE8044;background:#4ADE8011;color:#4ADE80;transition:all .15s">AQ</button>
+    <button class="cls-filter" data-cls="Q"  onclick="setFilter('Q')"  style="border-radius:6px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #60A5FA44;background:#C9A96E18;color:#C9A96E;transition:all .15s">Q</button>
+    <button class="cls-filter" data-cls="N"  onclick="setFilter('N')"  style="border-radius:6px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #FCD34D44;background:#FCD34D11;color:#FCD34D;transition:all .15s">N</button>
+    <button class="cls-filter" data-cls="NQ" onclick="setFilter('NQ')" style="border-radius:6px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #F8717144;background:#F8717111;color:#F87171;transition:all .15s">NQ</button>
+  </div>
+
+  <!-- FILTROS DE DATA -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <select id="filter-month" onchange="renderLeads()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:7px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+      <option value="">Todos os meses</option>
+      <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+      <option value="03">Março</option><option value="04">Abril</option>
+      <option value="05">Maio</option><option value="06">Junho</option>
+      <option value="07">Julho</option><option value="08">Agosto</option>
+      <option value="09">Setembro</option><option value="10">Outubro</option>
+      <option value="11">Novembro</option><option value="12">Dezembro</option>
+    </select>
+    <select id="filter-year" onchange="renderLeads()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:7px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
+      <option value="">Todos os anos</option>
+      <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+    </select>
+    <div class="date-wrap"><input type="date" id="filter-from" onchange="renderLeads()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:7px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none" title="Data início"/><span class="date-cal-icon">📅</span></div>
+    <span style="font-size:11px;color:#4B5563">até</span>
+    <div class="date-wrap"><input type="date" id="filter-to" onchange="renderLeads()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:7px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none" title="Data fim"/><span class="date-cal-icon">📅</span></div>
+    <button onclick="clearDateFilter()" style="background:transparent;border:1px solid #2D3748;border-radius:6px;padding:7px 12px;color:#6B7280;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpar</button>
+  </div>
+  <div class="sum-row" id="sum-row"></div>
+  <div id="total-bar" style="display:none;background:#0D1117;border:1px solid #2D3748;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div style="font-size:11px;color:#6B7280;letter-spacing:.5px;text-transform:uppercase">Total na base</div>
+    <div id="total-bar-content" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
+  </div>
+  <div id="leads-list"></div>
+</div>
+
+<script>
+const DISQ = [
+  {id:"dq1", label:"Trabalha com conteúdo adulto ou nudez?"},
+  {id:"dq2", label:"Demonstra extremismo político ou religioso?"},
+  {id:"dq3", label:"Perfil fake, bot ou empresa sem rosto (não é pessoa física identificável)?"},
+  {id:"dq4", label:"Não demonstra nenhuma condição financeira ou desejo de evoluir?"},
+];
+
+const CRIT = [
+  {id:"c1",  label:"Faixa etária entre 20 e 50 anos?", hint:"Perfil visual, fotos, contexto de carreira", w:0.5},
+  {id:"c2",  label:"Profissão dentro do ICP?", hint:"Empresário, médico, advogado, executivo, consultor, prof. liberal", w:2},
+  {id:"c3",  label:"Sinais de renda acima de R$10k/mês?", hint:"Carro, viagens, roupas, cenários, escritório, conquistas declaradas", w:2},
+  {id:"c4",  label:"Demonstra sobrecarga, correria ou modo urgência?", hint:"Posts sobre falta de tempo, cansaço, excesso de trabalho", w:1.5},
+  {id:"c5",  label:"Perfil ativo e feed com qualidade visual?", hint:"Fotos produzidas, consistência, não é perfil abandonado", w:0.5},
+  {id:"c6",  label:"Foto de perfil profissional com rosto visível?", hint:"Limpa, bem produzida, transmite credibilidade", w:0.5},
+  {id:"c7",  label:"BIO com nicho, cargo, empresa ou conquistas declaradas?", hint:"Apresentação clara de quem é e o que faz", w:1},
+  {id:"c8",  label:"Compartilha valores alinhados ao João?", hint:"Família, crescimento, dedicação, saúde, fé, resultado", w:1},
+  {id:"c9",  label:"Demonstra querer evoluir ou buscar alta performance?", hint:"Livros, eventos, mentorias, conteúdos de desenvolvimento", w:1.5},
+  {id:"c10", label:"Aparenta ter poder de decisão de compra próprio?", hint:"Dono, sócio, gestor principal — não é subordinado ou funcionário CLT simples", w:1},
+];
+
+const MAX_W = CRIT.reduce((s,c)=>s+c.w,0);
+
+const CLS = {
+  AQ:{label:"AQ",full:"Altamente Qualificado",color:"#4ADE80",action:"Abordar imediatamente — prioridade máxima"},
+  Q: {label:"Q", full:"Qualificado",        color:"#60A5FA",action:"Abordar — dentro do ICP"},
+  N: {label:"N", full:"Neutro",             color:"#FCD34D",action:"Watchlist — monitorar antes de abordar"},
+  NQ:{label:"NQ",full:"Não Qualificado",    color:"#F87171",action:"Descartar ou direcionar para produto de entrada"},
+};
+
+function classify(s){ return s>=8?CLS.AQ:s>=6?CLS.Q:s>=4?CLS.N:CLS.NQ; }
+function scColor(s){ return s>=8?"#4ADE80":s>=6?"#60A5FA":s>=4?"#FCD34D":"#F87171"; }
+
+let dqAns={}, ans={}, curResult=null, leads=[], filter="all", profSel=null, searchTerm="", editLeadId=null;
+
+// ── SUPABASE DATA LAYER ────────────────────────────────────────
+async function loadLS(){
+  const { data, error } = await sb.from("leads_cdp")
+    .select("*").order("created_at", {ascending: false});
+  if(error){ console.error("loadLS:", error); return; }
+  leads = (data||[]).map(r=>({
+    id: r.id, username: r.username, score: r.score, cls: r.cls,
+    color: r.color, action: r.action, disq: r.disq, prof: r.prof,
+    date: r.date, note: r.note, fluxo: r.fluxo||"NS", ans: r.ans||{}
+  }));
+}
+
+async function saveLS(){ /* no-op: saves are per-operation */ }
+
+async function insertLead(lead){
+  const { error } = await sb.from("leads_cdp").insert({
+    id: lead.id, user_id: currentUser.id,
+    username: lead.username, score: lead.score, cls: lead.cls,
+    color: lead.color, action: lead.action, disq: lead.disq,
+    prof: lead.prof, date: lead.date, note: lead.note||"",
+    fluxo: lead.fluxo||"NS", ans: lead.ans||{}
+  });
+  if(error) throw error;
+}
+
+async function updateLeadDB(lead){
+  const { error } = await sb.from("leads_cdp").update({
+    username: lead.username, score: lead.score, cls: lead.cls,
+    color: lead.color, action: lead.action, disq: lead.disq,
+    prof: lead.prof, ans: lead.ans||{}
+  }).eq("id", lead.id);
+  if(error) throw error;
+}
+
+async function deleteLeadDB(id){
+  const { error } = await sb.from("leads_cdp").delete().eq("id", id);
+  if(error) throw error;
+}
+
+async function pushToPipeline(lead){
+  try{
+    // Duplicate check
+    const { data } = await sb.from("pipeline_leads")
+      .select("id").eq("username", lead.username).limit(1);
+    if(data && data.length > 0) return "duplicate";
+
+    const stage = lead.cls==="NQ" ? 9 : 0;
+    const { error } = await sb.from("pipeline_leads").insert({
+      id: "cdp-"+lead.id, user_id: currentUser.id,
+      username: lead.username, score: lead.score, cls: lead.cls,
+      color: lead.color, fluxo: lead.fluxo||"NS",
+      prof: lead.prof||"", note: lead.note||"",
+      stage: stage, last_date: new Date().toISOString().split("T")[0],
+      from_cdp: true
+    });
+    if(error) throw error;
+    return true;
+  }catch(e){ console.error("pushToPipeline error:",e); return false; }
+}
+function toast(m){ const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500); }
+
+function switchTab(tab){
+  ["form","result","leads"].forEach(v=>document.getElementById("view-"+v).classList.add("hidden"));
+  document.getElementById("tab-form").classList.remove("active");
+  document.getElementById("tab-leads").classList.remove("active");
+  // bottom nav sync
+  const bnavForm = document.getElementById("bnav-form");
+  const bnavLeads = document.getElementById("bnav-leads");
+  if(bnavForm) bnavForm.classList.remove("active");
+  if(bnavLeads) bnavLeads.classList.remove("active");
+  if(tab==="leads"){
+    document.getElementById("view-leads").classList.remove("hidden");
+    document.getElementById("tab-leads").classList.add("active");
+    if(bnavLeads) bnavLeads.classList.add("active");
+    renderLeads();
+  } else {
+    document.getElementById("view-"+tab).classList.remove("hidden");
+    document.getElementById("tab-form").classList.add("active");
+    if(bnavForm) bnavForm.classList.add("active");
+  }
+}
+
+function selProf(val, btn){
+  document.querySelectorAll(".prof-btn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+  profSel = val;
+}
+
+function buildDisq(){
+  const c=document.getElementById("disq-rows"); c.innerHTML="";
+  DISQ.forEach((d,i)=>{
+    const r=document.createElement("div"); r.className="qrow";
+    r.innerHTML=`<div class="qnum">${i+1}</div><div class="qlabel">${d.label}</div>
+    <div class="qbtns">
+      <button class="qbtn nao" id="btn-${d.id}-nao" onclick="ansDisq('${d.id}',false)">Não</button>
+      <button class="qbtn sim" id="btn-${d.id}-sim" onclick="ansDisq('${d.id}',true)">Sim</button>
+    </div>`;
+    c.appendChild(r);
+  });
+}
+
+function ansDisq(id,val){
+  dqAns[id]=val;
+  document.getElementById("btn-"+id+"-sim").classList.toggle("a",val===true);
+  document.getElementById("btn-"+id+"-nao").classList.toggle("a",val===false);
+  if(val===true){ showResult(0,true); return; }
+  const allNo=DISQ.every(d=>dqAns[d.id]===false);
+  if(allNo) document.getElementById("sec-crit").classList.remove("hidden");
+}
+
+function buildCrit(){
+  const c=document.getElementById("crit-rows"); c.innerHTML="";
+  CRIT.forEach((cr,i)=>{
+    const r=document.createElement("div"); r.className="qrow";
+    r.innerHTML=`<div class="qnum">${i+1}</div>
+    <div class="qlabel">${cr.label}${cr.w>=1.5?`<span class="wb">×${cr.w}</span>`:""}
+    ${cr.hint?`<small>${cr.hint}</small>`:""}
+    </div>
+    <div class="qbtns">
+      <button class="qbtn nao" id="btn-${cr.id}-nao" onclick="ansCrit('${cr.id}',false)">Não</button>
+      <button class="qbtn sim" id="btn-${cr.id}-sim" onclick="ansCrit('${cr.id}',true)">Sim</button>
+    </div>`;
+    c.appendChild(r);
+  });
+}
+
+function ansCrit(id,val){
+  ans[id]=val;
+  document.getElementById("btn-"+id+"-sim").classList.toggle("a",val===true);
+  document.getElementById("btn-"+id+"-nao").classList.toggle("a",val===false);
+  const done=CRIT.filter(c=>ans[c.id]!==undefined).length;
+  document.getElementById("crit-prog").textContent=`${done}/10 respondidos`;
+  document.getElementById("prog-fill").style.width=`${(done/10)*100}%`;
+}
+
+function calcScore(){
+  if(CRIT.some(c=>ans[c.id]===undefined)){ toast("Responda todos os critérios."); return; }
+  const raw=CRIT.reduce((s,c)=>s+(ans[c.id]?c.w:0),0);
+  const score=Math.round((raw/MAX_W)*10*10)/10;
+  showResult(score,false);
+}
+
+function showResult(score,disq){
+  curResult={score,disq,cls:disq?CLS.NQ:classify(score)};
+  const cls=curResult.cls;
+  const user=document.getElementById("f-user").value||"lead";
+
+  document.getElementById("res-user").textContent="@"+user;
+  document.getElementById("res-badge").textContent=cls.label;
+  document.getElementById("res-badge").style.background=cls.color;
+  document.getElementById("res-card").style.borderColor=cls.color;
+  document.getElementById("res-cls").textContent=cls.full;
+  document.getElementById("res-cls").style.color=cls.color;
+  document.getElementById("res-act").textContent="👉 "+cls.action;
+
+  if(disq){
+    document.getElementById("res-dial").innerHTML="";
+    document.getElementById("dq-banner").classList.remove("hidden");
+    document.getElementById("breakdown").innerHTML="";
+  } else {
+    document.getElementById("dq-banner").classList.add("hidden");
+    const circ=2*Math.PI*65;
+    document.getElementById("res-dial").innerHTML=`
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="65" fill="none" stroke="#2D3748" stroke-width="14"/>
+        <circle cx="80" cy="80" r="65" fill="none" stroke="${cls.color}" stroke-width="14"
+          stroke-dasharray="${(score/10)*circ} ${circ}" stroke-linecap="round"
+          transform="rotate(-90 80 80)" style="transition:stroke-dasharray .8s"/>
+        <text x="80" y="75" text-anchor="middle" fill="#fff" font-size="36" font-weight="700" font-family="'Playfair Display',serif">${score}</text>
+        <text x="80" y="98" text-anchor="middle" fill="#666" font-size="13" font-family="Inter,sans-serif">/ 10</text>
+      </svg>`;
+    document.getElementById("breakdown").innerHTML=`
+      ${profSel?`<div class="bd-item"><span style="color:#C9A96E">🏷</span><span style="color:#aaa">Profissão: <strong style="color:#fff">${profSel}</strong></span></div>`:""}
+      ${CRIT.map(c=>`<div class="bd-item">
+        <span style="color:${ans[c.id]?"#4ADE80":"#6B7280"}">${ans[c.id]?"✓":"✗"}</span>
+        <span style="color:${ans[c.id]?"#ccc":"#555"}">${c.label.replace("?","")}</span>
+      </div>`).join("")}`;
+  }
+  switchTab("result");
+}
+
+
+function editLead(id){
+  const l = leads.find(x=>x.id===id);
+  if(!l) return;
+  editLeadId = id;
+
+  // Preencher @ 
+  document.getElementById("f-user").value = l.username;
+
+  // Preencher profissão
+  profSel = l.prof || null;
+  document.querySelectorAll(".prof-btn").forEach(b=>{
+    const lbl = b.textContent.trim().replace(/[🏢⚖️🩺💼📊🎯❓ ]/g,"").trim();
+    b.classList.toggle("sel", lbl === l.prof || b.textContent.includes(l.prof||"__none__"));
+  });
+
+  // Preencher critérios se não foi desqualificado
+  dqAns = {}; ans = {};
+  if(!l.disq && l.ans){
+    // Marcar todos DISQs como NÃO (pois não foi desqualificado)
+    DISQ.forEach(d=>{ dqAns[d.id]=false; });
+    // Restaurar respostas dos critérios
+    ans = {...l.ans};
+  }
+
+  // Reconstruir formulário com respostas preenchidas
+  buildDisq();
+  // Marcar DISQs como não
+  DISQ.forEach(d=>{
+    const btnN = document.getElementById("btn-"+d.id+"-nao");
+    const btnS = document.getElementById("btn-"+d.id+"-sim");
+    if(btnN) btnN.classList.add("a");
+    if(btnS) btnS.classList.remove("a");
+  });
+
+  if(!l.disq){
+    document.getElementById("sec-crit").classList.remove("hidden");
+    buildCrit();
+    // Marcar critérios
+    CRIT.forEach(c=>{
+      const val = ans[c.id];
+      if(val !== undefined){
+        const btnS = document.getElementById("btn-"+c.id+"-sim");
+        const btnN = document.getElementById("btn-"+c.id+"-nao");
+        if(val){ if(btnS) btnS.classList.add("a"); }
+        else    { if(btnN) btnN.classList.add("a"); }
+      }
+    });
+    const done = CRIT.filter(c=>ans[c.id]!==undefined).length;
+    document.getElementById("crit-prog").textContent=`${done}/10 respondidos`;
+    document.getElementById("prog-fill").style.width=`${(done/10)*100}%`;
+  }
+
+  switchTab("form");
+  toast("✏️ Editando @"+l.username+" — recalcule o score para salvar.");
+}
+
+async function updatePipelineLead(lead){
+  try{
+    const { data } = await sb.from("pipeline_leads")
+      .select("id,stage").eq("username", lead.username).limit(1);
+    if(!data || !data.length) return;
+    const rec = data[0];
+    const updateFields = {
+      score: lead.score, cls: lead.cls, color: lead.color,
+      prof: lead.prof || undefined
+    };
+    // Atualiza etapa apenas se ainda estiver em A Contactar ou Descartado
+    if(rec.stage===0 || rec.stage===9){
+      updateFields.stage = lead.cls==="NQ" ? 9 : 0;
+    }
+    await sb.from("pipeline_leads").update(updateFields).eq("id", rec.id);
+  }catch(e){ console.error("updatePipelineLead error:",e); }
+}
+
+async function saveLead(){
+  const user=document.getElementById("f-user").value.trim().replace(/^@/,"");
+  if(!user){ toast("Informe o @ do lead."); return; }
+
+  if(editLeadId){
+    // MODO EDIÇÃO — atualiza lead existente
+    const idx = leads.findIndex(l=>l.id===editLeadId);
+    if(idx>-1){
+      leads[idx] = {
+        ...leads[idx],
+        username: user,
+        score: curResult.score,
+        cls: curResult.cls.label,
+        color: curResult.cls.color,
+        action: curResult.cls.action,
+        disq: curResult.disq,
+        prof: profSel || leads[idx].prof,
+        ans: curResult.disq ? {} : {...ans},
+      };
+      try{
+        await updateLeadDB(leads[idx]);
+        await updatePipelineLead(leads[idx]);
+        updateCount();
+        toast("✅ Lead atualizado com sucesso!");
+      }catch(e){ toast("❌ Erro ao salvar. Tente novamente."); return; }
+    }
+    editLeadId = null;
+    resetForm(); switchTab("leads");
+    return;
+  }
+
+  // MODO NOVO
+  const noteVal = document.getElementById("f-note")?.value.trim()||"";
+  const newLead = {
+    id:Date.now().toString(), username:user, score:curResult.score,
+    cls:curResult.cls.label, color:curResult.cls.color, action:curResult.cls.action,
+    disq:curResult.disq, prof:profSel, date:new Date().toLocaleDateString("pt-BR"),
+    note:noteVal, fluxo:"NS", ans:curResult.disq?{}:{...ans},
+  };
+  try{
+    await insertLead(newLead);
+    leads.unshift(newLead);
+    updateCount();
+    const destino = newLead.cls==="NQ" ? "Descartado" : "A Contactar";
+    const sent = await pushToPipeline(newLead);
+    if(sent===true){ showPipeBanner(newLead.username, newLead.cls, destino); }
+    else if(sent==="duplicate"){ toast("⚠️ @"+newLead.username+" já existe no Pipeline."); }
+    else { toast("❌ Lead salvo, mas erro ao enviar ao Pipeline."); }
+  }catch(e){ toast("❌ Erro ao salvar. Tente novamente."); return; }
+  resetForm(); switchTab("leads");
+}
+
+function resetForm(){
+  dqAns={}; ans={}; curResult=null; profSel=null; editLeadId=null;
+  document.getElementById("f-user").value="";
+  const fn = document.getElementById("f-note"); if(fn) fn.value="";
+  document.getElementById("sec-crit").classList.add("hidden");
+  document.querySelectorAll(".prof-btn").forEach(b=>b.classList.remove("sel"));
+  buildDisq(); buildCrit();
+  document.getElementById("crit-prog").textContent="0/10 respondidos";
+  document.getElementById("prog-fill").style.width="0%";
+  switchTab("form");
+}
+
+function copyAt(username){
+  navigator.clipboard.writeText("@"+username).then(()=>{
+    toast("📋 @"+username+" copiado!");
+  }).catch(()=>{
+    toast("@"+username);
+  });
+}
+
+function updateCount(){
+  document.getElementById("lcount").textContent=leads.length;
+  const nav = document.getElementById("lcount-nav");
+  if(nav) nav.textContent = leads.length;
+}
+
+function clearDateFilter(){
+  document.getElementById("filter-month").value="";
+  document.getElementById("filter-year").value="";
+  document.getElementById("filter-from").value="";
+  document.getElementById("filter-to").value="";
+  renderLeads();
+}
+
+function applyDateFilter(list){
+  const month = document.getElementById("filter-month")?.value;
+  const year  = document.getElementById("filter-year")?.value;
+  const from  = document.getElementById("filter-from")?.value;
+  const to    = document.getElementById("filter-to")?.value;
+  if(!month && !year && !from && !to) return list;
+  return list.filter(l=>{
+    if(!l.date) return false;
+    // l.date is "DD/MM/YYYY" — convert to YYYY-MM-DD for comparison
+    const parts = l.date.split("/");
+    const isoDate = parts[2]+"-"+parts[1]+"-"+parts[0];
+    const mm=parts[1], yyyy=parts[2];
+    if(from || to){
+      if(from && isoDate < from) return false;
+      if(to   && isoDate > to)   return false;
+      return true;
+    }
+    if(month && mm!==month) return false;
+    if(year  && yyyy!==year) return false;
+    return true;
+  });
+}
+
+function clearSearch(){
+  document.getElementById("search-lead").value="";
+  searchTerm="";
+  document.getElementById("search-clear").style.display="none";
+  renderLeads();
+}
+
+function renderLeads(){
+  // Atualiza searchTerm com valor atual do campo
+  const searchInput = document.getElementById("search-lead");
+  if(searchInput){
+    searchTerm = searchInput.value.trim().toLowerCase().replace(/^@/,"");
+    document.getElementById("search-clear").style.display = searchTerm ? "block" : "none";
+  }
+
+  // Totais GERAIS (sempre fixo, base completa)
+  const totalCounts={AQ:0,Q:0,N:0,NQ:0};
+  leads.forEach(l=>{if(totalCounts[l.cls]!==undefined)totalCounts[l.cls]++;});
+  const totalGeral = leads.length;
+
+  // Lista filtrada por classificação + data + busca
+  const fl0=filter==="all"?leads:leads.filter(l=>l.cls===filter);
+  const fl1=applyDateFilter(fl0);
+  const fl=searchTerm ? fl1.filter(l=>l.username.toLowerCase().includes(searchTerm)) : fl1;
+
+  // Totais do PERÍODO (leads filtrados por data + busca)
+  const allFiltered = searchTerm
+    ? applyDateFilter(filter==="all"?leads:leads.filter(l=>l.cls===filter)).filter(l=>l.username.toLowerCase().includes(searchTerm))
+    : applyDateFilter(filter==="all"?leads:leads.filter(l=>l.cls===filter));
+  const periodCounts={AQ:0,Q:0,N:0,NQ:0};
+  allFiltered.forEach(l=>{if(periodCounts[l.cls]!==undefined)periodCounts[l.cls]++;});
+  const totalPeriod = allFiltered.length;
+
+  // Detecta se há filtro de data ativo
+  const hasDateFilter = !!(
+    document.getElementById("filter-month")?.value ||
+    document.getElementById("filter-year")?.value ||
+    document.getElementById("filter-from")?.value ||
+    document.getElementById("filter-to")?.value
+  );
+
+  // Cards superiores: mostram período se filtro ativo, geral se não
+  const displayCounts = hasDateFilter ? periodCounts : totalCounts;
+  const displayTotal  = hasDateFilter ? totalPeriod  : totalGeral;
+  document.getElementById("sum-row").innerHTML=
+    [["AQ","#4ADE80"],["Q","#60A5FA"],["N","#FCD34D"],["NQ","#F87171"]].map(([c,col])=>`
+    <div class="sum-card" style="${filter===c?`border-color:${col}`:""}" onclick="setFilter('${c}')">
+      <div class="sum-num" style="color:${col}">${displayCounts[c]}</div>
+      <div class="sum-lbl">${c}</div>
+      ${filter===c?`<div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:${col}"></div>`:""}
+    </div>`).join("")+`
+    <div class="sum-card" style="border-color:#ffffff11;cursor:default">
+      <div class="sum-num" style="color:#fff">${displayTotal}</div>
+      <div class="sum-lbl" style="color:#6B7280">${hasDateFilter?"período":"total"}</div>
+    </div>`;
+
+  // Barra de total geral — só aparece quando filtro de data está ativo
+  const totalBar = document.getElementById("total-bar");
+  const totalBarContent = document.getElementById("total-bar-content");
+  if(hasDateFilter){
+    totalBar.style.display="flex";
+    totalBarContent.innerHTML=
+      [["AQ","#4ADE80"],["Q","#60A5FA"],["N","#FCD34D"],["NQ","#F87171"]].map(([c,col])=>
+        `<span style="font-size:12px"><span style="color:${col};font-weight:700">${totalCounts[c]}</span> <span style="color:#6B7280">${c}</span></span>`
+      ).join(`<span style="color:#2D3748">·</span>`) +
+      `<span style="color:#4B5563">|</span><span style="font-size:12px;color:#555"><strong style="color:#888">${totalGeral}</strong> leads no total</span>`;
+  } else {
+    totalBar.style.display="none";
+  }
+
+  const ll=document.getElementById("leads-list");
+  if(!fl.length){ ll.innerHTML=`<div class="empty">${leads.length===0?"Nenhum lead ainda.":"Nenhum lead para esse filtro."}</div>`; return; }
+  ll.innerHTML=fl.map(l=>`
+    <div class="lead-card" style="border-left-color:${l.color}">
+      <div class="lead-top">
+        <div>
+          <a href="https://instagram.com/${l.username}" target="_blank" rel="noopener" class="lead-name" style="color:#E5E7EB;text-decoration:none;" onmouseover="this.style.color='#C9A96E'" onmouseout="this.style.color='#E5E7EB'">@${l.username}</a>
+          <span class="lead-date"> · ${l.date}</span>
+          ${l.prof?`<div class="lead-prof">🏷 ${l.prof}</div>`:""}
+        </div>
+        <div class="lead-right">
+          ${!l.disq?`<span class="spill" style="color:${l.color};border-color:${l.color};background:${l.color}22">${l.score}/10</span>`:""}
+          <span class="cpill" style="background:${l.color}">${l.cls}</span>
+          <button onclick="copyAt('${l.username}')" style="background:transparent;border:none;color:var(--mt);cursor:pointer;font-size:13px;padding:2px 6px" title="Copiar @">⎘</button><button onclick="editLead('${l.id}')" style="background:transparent;border:none;color:var(--mt);cursor:pointer;font-size:13px;padding:2px 6px" title="Editar lead">✏️</button><button class="delbtn" onclick="delLead('${l.id}')">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <div class="lead-act">👉 ${l.action}</div>
+        <button onclick="sendToPipeline('${l.id}')" style="background:#1A2030;border:1px solid #2D3748;border-radius:5px;padding:4px 10px;font-size:11px;color:#C9A96E;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0">→ Pipeline</button>
+      </div>
+    </div>`).join("");
+}
+
+function setFilter(c){
+  filter = filter===c && c!=="all" ? "all" : c;
+  document.querySelectorAll(".cls-filter").forEach(btn=>{
+    const isCls = btn.dataset.cls;
+    const isActive = isCls===filter || (filter==="all" && isCls==="all");
+    btn.style.outline = isActive ? "2px solid currentColor" : "none";
+    btn.style.opacity = isActive ? "1" : "0.55";
+  });
+  renderLeads();
+}
+async function delLead(id){
+  const lead = leads.find(l=>l.id===id);
+  if(!lead) return;
+  if(!confirm("Excluir @" + lead.username + " do Qualificador?\n\nEsta ação não pode ser desfeita.")) return;
+  try{ await deleteLeadDB(id); leads=leads.filter(l=>l.id!==id); updateCount(); renderLeads(); toast("🗑️ Lead excluído."); }catch(e){ toast("❌ Erro ao excluir."); }
+}
+
+async function sendToPipeline(id){
+  const lead = leads.find(l=>l.id===id);
+  if(!lead) return;
+  const result = await pushToPipeline(lead);
+  if(result===true){
+    const destino = lead.cls==="NQ" ? "Descartado" : "A Contactar";
+    showPipeBanner(lead.username, lead.cls, destino);
+  } else if(result==="duplicate"){
+    toast("⚠️ @"+lead.username+" já existe no Pipeline.");
+  } else {
+    toast("❌ Erro ao enviar. Tente novamente.");
+  }
+}
+
+// Pipeline banner
+function showPipeBanner(username, cls, destino){
+  destino = destino || "A Contactar";
+  const color = cls==="AQ"?"#4ADE80":cls==="Q"?"#60A5FA":cls==="N"?"#FCD34D":"#F87171";
+  const b = document.createElement("div");
+  b.id = "pipe-banner";
+  b.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#141C2E;border:1px solid ${color};border-radius:10px;padding:14px 20px;font-size:13px;color:#fff;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.6);display:flex;align-items:center;gap:12px;max-width:90vw`;
+  b.innerHTML = `<span style="font-size:18px">🚀</span><div><div style="font-weight:700;color:${color}">@${username} enviado ao Pipeline!</div><div style="font-size:11px;color:#666;margin-top:2px">Classificação: ${cls} · Etapa: ${destino}</div></div><button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:16px;margin-left:8px">✕</button>`;
+  document.body.appendChild(b);
+  setTimeout(()=>{ if(b.parentElement) b.remove(); }, 5000);
+  toast("✅ Lead salvo e enviado ao Pipeline!");
+}
+
+function exportBackup(){
+  if(!leads.length){ toast("Nenhum lead para exportar."); return; }
+  const data = { source:"cdp", version:2, exportedAt:new Date().toISOString(), leads };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-cdp-${new Date().toLocaleDateString("pt-BR").replace(/\//g,"-")}.json`;
+  a.click();
+  toast("✅ Backup exportado com sucesso!");
+}
+
+function importBackup(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      const imported = data.leads || data;
+      if(!Array.isArray(imported)) throw new Error();
+      const existing = leads.map(l=>l.id);
+      const news = imported.filter(l=>!existing.includes(l.id));
+      if(!news.length){ toast("Nenhum lead novo para importar."); return; }
+      const rows = news.map(l=>({
+        id: l.id, user_id: currentUser.id,
+        username: l.username, score: l.score, cls: l.cls,
+        color: l.color, action: l.action, disq: l.disq||false,
+        prof: l.prof||"", date: l.date||"", note: l.note||"",
+        fluxo: l.fluxo||"NS", ans: l.ans||{}
+      }));
+      const { error } = await sb.from("leads_cdp").insert(rows);
+      if(error) throw error;
+      leads = [...news, ...leads];
+      updateCount(); renderLeads();
+      toast(`✅ ${news.length} lead(s) importado(s) com sucesso!`);
+    }catch{ toast("❌ Arquivo inválido ou erro ao importar."); }
+  };
+  reader.readAsText(file);
+  e.target.value="";
+}
+
+
+
+// ── INICIALIZAÇÃO COM AUTH ──────────────────────────────────────
+function hideLoading(){
+  const ls = document.getElementById("loading-screen");
+  if(ls) ls.style.display = "none";
+}
+
+async function init(){
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){ window.location.href="index.html"; return; }
+    currentUser = session.user;
+    await loadLS();
+    buildDisq(); buildCrit(); updateCount();
+    hideLoading();
+  // Toast de boas-vindas
+  const urlP = new URLSearchParams(window.location.search);
+  if(urlP.get("welcome")==="1"){
+    const name = currentUser.email.split("@")[0];
+    toast("👋 Olá, " + name.charAt(0).toUpperCase() + name.slice(1) + "! Bem-vindo de volta.");
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+  document.querySelectorAll(".cls-filter").forEach(btn=>{
+    btn.style.opacity = btn.dataset.cls==="all" ? "1" : "0.55";
+    btn.style.outline = btn.dataset.cls==="all" ? "2px solid currentColor" : "none";
+  });
+  } catch(e){
+    console.error("Erro ao inicializar:", e);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function sair(){
+  await sb.auth.signOut();
+  window.location.href="index.html";
+}
+
+init();
+
+function toggleToolbar(){
+  const body = document.getElementById("toolbar-body");
+  const arrow = document.getElementById("toolbar-arrow");
+  if(!body) return;
+  body.classList.toggle("closed");
+  if(arrow) arrow.textContent = body.classList.contains("closed") ? "▼" : "▲";
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportXLSX(){
+  if(!leads.length){ toast("Nenhum lead para exportar."); return; }
+
+  const clsLabel = {AQ:"Altamente Qualificado", Q:"Qualificado", N:"Neutro", NQ:"Não Qualificado"};
+
+  const rows = leads.map(l=>({
+    "Data":            l.date || "",
+    "@Perfil":         l.username || "",
+    "Profissão":       l.prof || "",
+    "Classificação":   l.cls || "",
+    "Descrição":       clsLabel[l.cls] || "",
+    "Score (0–10)":    l.disq ? "NQ imediato" : (l.score ?? ""),
+    "Desqualificado":  l.disq ? "Sim" : "Não",
+    "Ação recomendada": l.action || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Larguras de coluna
+  ws["!cols"] = [
+    {wch:12},{wch:22},{wch:18},{wch:14},{wch:22},
+    {wch:14},{wch:14},{wch:35}
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Leads CDP");
+
+  const date = new Date().toLocaleDateString("pt-BR").replace(/\//g,"-");
+  XLSX.writeFile(wb, `qualificador-cdp-${date}.xlsx`);
+  toast("📊 Excel exportado com sucesso!");
+}
+</script>
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn active" id="bnav-form" onclick="switchTab('form')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+      Avaliar
+    </button>
+    <button class="bnav-btn" id="bnav-leads" onclick="switchTab('leads')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+      Leads (<span id="lcount-nav">0</span>)
+    </button>
+  </div>
+</nav>
+</body>
+</html>
