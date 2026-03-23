@@ -175,8 +175,20 @@ let currentUser = null;
   </div>
 
   <div class="card">
-    <div class="lbl">Observação <span style="color:var(--mt);font-size:10px;text-transform:none;letter-spacing:0">(opcional)</span></div>
-    <input type="text" id="f-note" placeholder="ex: mencionou dificuldade com rotina, perfil muito ativo..."/>
+    <div class="lbl">Tipo de perfil</div>
+    <div class="prof-group" id="tipo-group" style="gap:8px">
+      <button type="button" class="prof-btn" id="tipo-pub" onclick="selTipo('publico',this)">🌐 Perfil público</button>
+      <button type="button" class="prof-btn" id="tipo-priv" onclick="selTipo('privado',this)">🔒 Perfil privado</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Origem do lead</div>
+    <div class="prof-group" id="origem-group" style="gap:8px">
+      <button type="button" class="prof-btn" onclick="selOrigem('NS',this)">🔵 NS — Novo Seguidor</button>
+      <button type="button" class="prof-btn" onclick="selOrigem('VS',this)">🟣 VS — Visita Sincera</button>
+      <button type="button" class="prof-btn" onclick="selOrigem('GS',this)">🟢 GS — Gatilho Social</button>
+    </div>
   </div>
 
   <div class="card">
@@ -306,7 +318,7 @@ const CLS = {
 function classify(s){ return s>=8?CLS.AQ:s>=6?CLS.Q:s>=4?CLS.N:CLS.NQ; }
 function scColor(s){ return s>=8?"#4ADE80":s>=6?"#60A5FA":s>=4?"#FCD34D":"#F87171"; }
 
-let dqAns={}, ans={}, curResult=null, leads=[], filter="all", profSel=null, searchTerm="", editLeadId=null;
+let dqAns={}, ans={}, curResult=null, leads=[], filter="all", profSel=null, tipoPerfil='publico', origemSel='NS', searchTerm="", editLeadId=null;
 
 // ── SUPABASE DATA LAYER ────────────────────────────────────────
 async function loadLS(){
@@ -316,7 +328,8 @@ async function loadLS(){
   leads = (data||[]).map(r=>({
     id: r.id, username: r.username, score: r.score, cls: r.cls,
     color: r.color, action: r.action, disq: r.disq, prof: r.prof,
-    date: r.date, note: r.note, fluxo: r.fluxo||"NS", ans: r.ans||{}
+    date: r.date, note: r.note||"", tipo_perfil: r.tipo_perfil||"publico",
+    fluxo: r.fluxo||"NS", ans: r.ans||{}
   }));
 }
 
@@ -327,7 +340,8 @@ async function insertLead(lead){
     id: lead.id, user_id: currentUser.id,
     username: lead.username, score: lead.score, cls: lead.cls,
     color: lead.color, action: lead.action, disq: lead.disq,
-    prof: lead.prof, date: lead.date, note: lead.note||"",
+    prof: lead.prof, date: lead.date, note: "",
+    tipo_perfil: lead.tipo_perfil||"publico",
     fluxo: lead.fluxo||"NS", ans: lead.ans||{}
   });
   if(error) throw error;
@@ -337,7 +351,8 @@ async function updateLeadDB(lead){
   const { error } = await sb.from("leads_cdp").update({
     username: lead.username, score: lead.score, cls: lead.cls,
     color: lead.color, action: lead.action, disq: lead.disq,
-    prof: lead.prof, ans: lead.ans||{}
+    prof: lead.prof, fluxo: lead.fluxo||"NS",
+    tipo_perfil: lead.tipo_perfil||"publico", ans: lead.ans||{}
   }).eq("id", lead.id);
   if(error) throw error;
 }
@@ -388,6 +403,18 @@ function switchTab(tab){
     document.getElementById("tab-form").classList.add("active");
     if(bnavForm) bnavForm.classList.add("active");
   }
+}
+
+function selTipo(val, btn){
+  document.querySelectorAll("#tipo-group .prof-btn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+  tipoPerfil = val;
+}
+
+function selOrigem(val, btn){
+  document.querySelectorAll("#origem-group .prof-btn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+  origemSel = val;
 }
 
 function selProf(val, btn){
@@ -444,6 +471,8 @@ function ansCrit(id,val){
 }
 
 function calcScore(){
+  const userVal = document.getElementById("f-user")?.value.trim().replace(/^@/,"");
+  if(!userVal){ toast("Informe o @ do lead antes de calcular."); document.getElementById("f-user")?.focus(); return; }
   if(CRIT.some(c=>ans[c.id]===undefined)){ toast("Responda todos os critérios."); return; }
   const raw=CRIT.reduce((s,c)=>s+(ans[c.id]?c.w:0),0);
   const score=Math.round((raw/MAX_W)*10*10)/10;
@@ -504,6 +533,17 @@ function editLead(id){
     const lbl = b.textContent.trim().replace(/[🏢⚖️🩺💼📊🎯❓ ]/g,"").trim();
     b.classList.toggle("sel", lbl === l.prof || b.textContent.includes(l.prof||"__none__"));
   });
+  // Preencher tipo de perfil
+  tipoPerfil = l.tipo_perfil || "publico";
+  document.querySelectorAll("#tipo-group .prof-btn").forEach(b=>b.classList.remove("sel"));
+  if(tipoPerfil==="privado") document.getElementById("tipo-priv")?.classList.add("sel");
+  else document.getElementById("tipo-pub")?.classList.add("sel");
+  // Preencher origem
+  origemSel = l.fluxo || "NS";
+  document.querySelectorAll("#origem-group .prof-btn").forEach(b=>{
+    if(b.textContent.includes(origemSel)) b.classList.add("sel");
+    else b.classList.remove("sel");
+  });
 
   // Preencher critérios se não foi desqualificado
   dqAns = {}; ans = {};
@@ -553,8 +593,12 @@ async function updatePipelineLead(lead){
     if(!data || !data.length) return;
     const rec = data[0];
     const updateFields = {
-      score: lead.score, cls: lead.cls, color: lead.color,
-      prof: lead.prof || undefined
+      score: lead.score,
+      cls: lead.cls,
+      color: lead.color,
+      prof: lead.prof||"",
+      fluxo: lead.fluxo||"NS",
+      tipo_perfil: lead.tipo_perfil||"publico"
     };
     // Atualiza etapa apenas se ainda estiver em A Contactar ou Descartado
     if(rec.stage===0 || rec.stage===9){
@@ -581,6 +625,8 @@ async function saveLead(){
         action: curResult.cls.action,
         disq: curResult.disq,
         prof: profSel || leads[idx].prof,
+        fluxo: origemSel,
+        tipo_perfil: tipoPerfil,
         ans: curResult.disq ? {} : {...ans},
       };
       try{
@@ -596,12 +642,11 @@ async function saveLead(){
   }
 
   // MODO NOVO
-  const noteVal = document.getElementById("f-note")?.value.trim()||"";
   const newLead = {
     id:Date.now().toString(), username:user, score:curResult.score,
     cls:curResult.cls.label, color:curResult.cls.color, action:curResult.cls.action,
     disq:curResult.disq, prof:profSel, date:new Date().toLocaleDateString("pt-BR"),
-    note:noteVal, fluxo:"NS", ans:curResult.disq?{}:{...ans},
+    tipo_perfil:tipoPerfil, fluxo:origemSel, ans:curResult.disq?{}:{...ans},
   };
   try{
     await insertLead(newLead);
@@ -619,7 +664,11 @@ async function saveLead(){
 function resetForm(){
   dqAns={}; ans={}; curResult=null; profSel=null; editLeadId=null;
   document.getElementById("f-user").value="";
-  const fn = document.getElementById("f-note"); if(fn) fn.value="";
+  tipoPerfil = 'publico'; origemSel = 'NS';
+  document.querySelectorAll("#tipo-group .prof-btn, #origem-group .prof-btn").forEach(b=>b.classList.remove("sel"));
+  // Marcar padrões
+  document.getElementById("tipo-pub")?.classList.add("sel");
+  document.querySelectorAll("#origem-group .prof-btn")[0]?.classList.add("sel");
   document.getElementById("sec-crit").classList.add("hidden");
   document.querySelectorAll(".prof-btn").forEach(b=>b.classList.remove("sel"));
   buildDisq(); buildCrit();
@@ -752,6 +801,7 @@ function renderLeads(){
           <a href="https://instagram.com/${l.username}" target="_blank" rel="noopener" class="lead-name" style="color:#E5E7EB;text-decoration:none;" onmouseover="this.style.color='#C9A96E'" onmouseout="this.style.color='#E5E7EB'">@${l.username}</a>
           <span class="lead-date"> · ${l.date}</span>
           ${l.prof?`<div class="lead-prof">🏷 ${l.prof}</div>`:""}
+          ${l.tipo_perfil?`<div class="lead-prof">${l.tipo_perfil==='privado'?'🔒 Perfil privado':'🌐 Perfil público'}</div>`:""}
         </div>
         <div class="lead-right">
           ${!l.disq?`<span class="spill" style="color:${l.color};border-color:${l.color};background:${l.color}22">${l.score}/10</span>`:""}

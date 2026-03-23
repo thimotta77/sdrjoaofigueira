@@ -203,7 +203,7 @@ async function enviarReset(){
   document.getElementById("reset-erro").classList.remove("show");
   document.getElementById("reset-ok").classList.remove("show");
   const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://sdrjoaofigueira.vercel.app"
+    redirectTo: "https://project-bp4at.vercel.app"
   });
   if(error){
     mostrarErro("Erro ao enviar. Verifique o e-mail e tente novamente.", "reset-erro");

@@ -225,6 +225,12 @@ let currentUser = null;
 
 <!-- PIPELINE -->
 <div style="background:#0D1117;border-bottom:1px solid #2D3748;padding:8px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+  <div style="position:relative;flex:1;min-width:160px;max-width:240px">
+    <input type="text" id="pipe-search" placeholder="🔍 Buscar @lead..." oninput="render()"
+      style="width:100%;background:#1A2030;border:1px solid #2D3748;border-radius:7px;padding:7px 30px 7px 10px;color:#E5E7EB;font-size:13px;font-family:'DM Sans',sans-serif;outline:none"
+      onfocus="this.style.borderColor='#C9A96E'" onblur="this.style.borderColor='#2D3748'"/>
+    <button id="pipe-search-clear" onclick="clearPipeSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#6B7280;cursor:pointer;font-size:12px">✕</button>
+  </div>
   <span style="font-size:11px;color:#6B7280;letter-spacing:.5px;text-transform:uppercase;margin-right:4px">Filtrar:</span>
   <select id="filter-month" onchange="render()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:6px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
     <option value="">Todos os meses</option>
@@ -564,6 +570,8 @@ async function load(){
     id: r.id, username: r.username, score: r.score, cls: r.cls,
     color: r.color, fluxo: r.fluxo||"NS", prof: r.prof||"",
     note: r.note||"", stage: r.stage||0,
+    tipo_perfil: r.tipo_perfil||"publico",
+    timeline_checks: r.timeline_checks||{},
     lastDate: r.last_date, fromCDP: r.from_cdp,
     createdAt: r.created_at
   }));
@@ -578,6 +586,8 @@ async function insertLeadDB(lead){
     cls: lead.cls||"Q", color: lead.color||"#60A5FA",
     fluxo: lead.fluxo||"NS", prof: lead.prof||"",
     note: lead.note||"", stage: lead.stage||0,
+    tipo_perfil: lead.tipo_perfil||"publico",
+    timeline_checks: lead.timeline_checks||{},
     last_date: lead.lastDate||new Date().toISOString().split("T")[0],
     from_cdp: lead.fromCDP||false
   });
@@ -586,15 +596,17 @@ async function insertLeadDB(lead){
 
 async function updateLeadDB(id, fields){
   const mapped = {};
-  if(fields.username !== undefined) mapped.username = fields.username;
-  if(fields.score    !== undefined) mapped.score    = fields.score;
-  if(fields.cls      !== undefined) mapped.cls      = fields.cls;
-  if(fields.color    !== undefined) mapped.color    = fields.color;
-  if(fields.fluxo    !== undefined) mapped.fluxo    = fields.fluxo;
-  if(fields.prof     !== undefined) mapped.prof     = fields.prof;
-  if(fields.note     !== undefined) mapped.note     = fields.note;
-  if(fields.stage    !== undefined) mapped.stage    = fields.stage;
-  if(fields.lastDate !== undefined) mapped.last_date = fields.lastDate;
+  if(fields.username    !== undefined) mapped.username     = fields.username;
+  if(fields.score       !== undefined) mapped.score        = fields.score;
+  if(fields.cls         !== undefined) mapped.cls          = fields.cls;
+  if(fields.color       !== undefined) mapped.color        = fields.color;
+  if(fields.fluxo       !== undefined) mapped.fluxo        = fields.fluxo;
+  if(fields.prof        !== undefined) mapped.prof         = fields.prof;
+  if(fields.note        !== undefined) mapped.note         = fields.note;
+  if(fields.stage       !== undefined) mapped.stage        = fields.stage;
+  if(fields.lastDate    !== undefined) mapped.last_date    = fields.lastDate;
+  if(fields.tipo_perfil !== undefined) mapped.tipo_perfil  = fields.tipo_perfil;
+  if(fields.timeline_checks !== undefined) mapped.timeline_checks = fields.timeline_checks;
   const { error } = await sb.from("pipeline_leads").update(mapped).eq("id", id);
   if(error) throw error;
 }
@@ -642,6 +654,21 @@ function toast(m){ const t=document.getElementById("toast");t.textContent=m;t.cl
 
 function render(){ renderPipe(); renderStats(); renderAlerts(); }
 
+function clearPipeSearch(){
+  const el = document.getElementById("pipe-search");
+  if(el) el.value = "";
+  document.getElementById("pipe-search-clear").style.display = "none";
+  render();
+}
+
+function applyPipeSearch(list){
+  const el = document.getElementById("pipe-search");
+  if(!el || !el.value.trim()) return list;
+  const term = el.value.trim().toLowerCase().replace(/^@/,"");
+  document.getElementById("pipe-search-clear").style.display = "block";
+  return list.filter(l => l.username.toLowerCase().includes(term));
+}
+
 function clearDateFilter(){
   document.getElementById("filter-month").value="";
   document.getElementById("filter-year").value="";
@@ -677,7 +704,7 @@ function renderPipe(){
   pipe.innerHTML="";
   STAGES.forEach((st,idx)=>{
     const allInStage=leads.filter(l=>l.stage===idx);
-    const sl=applyDateFilter(allInStage);
+    const sl=applyPipeSearch(applyDateFilter(allInStage));
     const colSelectedIds=sl.filter(l=>selectedIds.has(l.id));
     const allColSelected=sl.length>0&&colSelectedIds.length===sl.length;
     const col=document.createElement("div"); col.className="col";
@@ -793,6 +820,7 @@ function renderCard(l,stColor){
       </div>
     </div>
     <div style="height:1px;background:#2D3748;margin-bottom:8px"></div>
+    ${l.tipo_perfil?`<div class="card-prof" style="margin-bottom:4px;font-size:10px;color:#6B7280">${l.tipo_perfil==="privado"?"🔒 Privado":"🌐 Público"}</div>`:""}
     ${l.prof?`<div class="card-prof" style="margin-bottom:6px">🏷 ${l.prof}${l.fromCDP?` <span style="font-size:9px;background:#C9A96E22;color:#C9A96E;border-radius:3px;padding:1px 4px;margin-left:3px">CDP</span>`:""}</div>`:""}
     <div class="sbar" style="margin-bottom:9px"><div class="sfill" style="width:${sc*10}%;background:${scColor(sc)}"></div></div>
     <div class="card-foot">
@@ -882,9 +910,11 @@ async function saveLead(){
   };
   try{
     if(editId){
-      await updateLeadDB(editId, data);
+      // Ao editar, preservar a data atual — só muda ao mover etapa
+      const { lastDate: _, ...dataWithoutDate } = data;
+      await updateLeadDB(editId, dataWithoutDate);
       const i=leads.findIndex(l=>l.id===editId);
-      if(i>-1) leads[i]={...leads[i],...data};
+      if(i>-1) leads[i]={...leads[i],...dataWithoutDate};
       toast("Lead atualizado!");
     } else {
       const newLead={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
@@ -944,20 +974,41 @@ function openDet(id){
     <button class="mbtn${l.stage===i?" cur":""}" onclick="moveLead(${i})"
       style="${l.stage===i?`border-color:${s.color};color:${s.color}`:""}">${l.stage===i?"✓ ":""}${s.label}</button>`).join("");
 
-  // Timeline
+  // Timeline com checkboxes
   const d=fu.days;
   const rules=FU_RULES[l.stage]||[];
+  const checks = l.timeline_checks||{};
   document.getElementById("det-tl").innerHTML=`
     <div class="tl-item done">
       <div class="tl-text">Entrou em <strong>${STAGES[l.stage].label}</strong></div>
       <div class="tl-date">${l.lastDate?new Date(l.lastDate+"T12:00:00").toLocaleDateString("pt-BR"):"data não informada"} · ${d}d atrás</div>
     </div>
-    ${rules.map(r=>`<div class="tl-item${d>=r.d?" "+(r.lv==="alert"?"alert":r.lv==="warn"?"warn":"done"):""}">
-      <div class="tl-text" style="color:${d>=r.d?(r.lv==="alert"?"var(--red)":r.lv==="warn"?"var(--yel)":"var(--grn)"):"var(--mt)"}">${r.t}</div>
-      <div class="tl-date">Dia +${r.d}</div>
-    </div>`).join("")}`;
+    ${rules.map((r,ri)=>{
+      const key = "stage_"+l.stage+"_item_"+ri;
+      const checked = checks[key]===true;
+      const color = d>=r.d?(r.lv==="alert"?"var(--red)":r.lv==="warn"?"var(--yel)":"var(--grn)"):"var(--mt)";
+      return `<div class="tl-item${d>=r.d?" "+(r.lv==="alert"?"alert":r.lv==="warn"?"warn":"done"):""}" style="display:flex;align-items:flex-start;gap:8px">
+        <input type="checkbox" ${checked?"checked":""} 
+          onchange="toggleTimelineCheck('${l.id}','${key}',this.checked)"
+          style="margin-top:3px;accent-color:#C9A96E;cursor:pointer;flex-shrink:0;width:14px;height:14px"/>
+        <div>
+          <div class="tl-text" style="color:${checked?"#6B7280;text-decoration:line-through":color}">${r.t}</div>
+          <div class="tl-date">Dia +${r.d}</div>
+        </div>
+      </div>`;
+    }).join("")}`;
 
   document.getElementById("modal-det").style.display="flex";
+}
+
+async function toggleTimelineCheck(leadId, key, checked){
+  const l = leads.find(x=>x.id===leadId);
+  if(!l) return;
+  l.timeline_checks = l.timeline_checks||{};
+  l.timeline_checks[key] = checked;
+  try{
+    await updateLeadDB(leadId, {timeline_checks: l.timeline_checks});
+  }catch(e){ console.error("Erro ao salvar check:", e); }
 }
 
 async function moveLead(stage){
