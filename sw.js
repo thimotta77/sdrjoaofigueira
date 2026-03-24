@@ -1,4 +1,4 @@
-const CACHE = 'sdr-jf-v17';
+const CACHE = 'sdr-jf-v18';
 const OFFLINE_URLS = [
   '/',
   '/index.html',

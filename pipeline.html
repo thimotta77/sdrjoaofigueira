@@ -91,6 +91,7 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .rbtn.s-q{border-color:#C9A96E;color:#C9A96E;background:#C9A96E18}
 .rbtn.s-n{border-color:#FCD34D;color:#FCD34D;background:#FCD34D11}
 .rbtn.s-nq{border-color:#F87171;color:#F87171;background:#F8717111}
+.rbtn.s-tipo-sel{border-color:#C9A96E;color:#C9A96E;background:#C9A96E18}
 .macts{display:flex;gap:8px;margin-top:18px}
 .mbtn-save{flex:1;background:#C9A96E;border:none;border-radius:7px;padding:11px;color:#0D1117;font-weight:600;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
 .mbtn-cancel{background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:11px 14px;color:var(--mt);cursor:pointer;font-family:'DM Sans',sans-serif}
@@ -288,6 +289,13 @@ let currentUser = null;
         <button class="rbtn" onclick="selR('fluxo','NS',this)">🔵 NS</button>
         <button class="rbtn" onclick="selR('fluxo','VS',this)">🟣 VS</button>
         <button class="rbtn" onclick="selR('fluxo','GS',this)">🟢 GS</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Tipo de perfil</label>
+      <div class="rgroup" id="rg-tipo">
+        <button class="rbtn" onclick="selR('tipo','publico',this)">🌐 Público</button>
+        <button class="rbtn" onclick="selR('tipo','privado',this)">🔒 Privado</button>
       </div>
     </div>
     <div class="fg">
@@ -559,7 +567,7 @@ const FU_RULES = {
 
 
 // ── STATE ─────────────────────────────────────────────────────
-let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null}, selectedIds=new Set();
+let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null,tipo:'publico'}, selectedIds=new Set();
 
 // ── SUPABASE DATA LAYER ────────────────────────────────────────
 async function load(){
@@ -855,7 +863,7 @@ function renderAlerts(){
 
 // ── ADD/EDIT MODAL ────────────────────────────────────────────
 function openAdd(){
-  editId=null; fState={fluxo:null,cls:null};
+  editId=null; fState={fluxo:null,cls:null,tipo:'publico'};
   document.getElementById("madd-title").textContent="➕ Novo Lead";
   ["f-user","f-score","f-prof","f-note"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("f-stage").value="0";
@@ -880,6 +888,11 @@ function openEdit(id){
     const v=b.textContent.trim().replace(/[🔵🟣🟢 ]/g,"");
     b.className="rbtn"+(v===l.fluxo?` s-${l.fluxo.toLowerCase()}`:"");
   });
+  fState.tipo = l.tipo_perfil||"publico";
+  document.querySelectorAll("#rg-tipo .rbtn").forEach(b=>{
+    const v=b.textContent.includes("Público")?"publico":"privado";
+    b.className="rbtn"+(v===fState.tipo?" s-tipo-sel":"");
+  });
   document.querySelectorAll("#rg-cls .rbtn").forEach(b=>{
     const v=b.textContent.trim();
     b.className="rbtn"+(v===l.cls?` s-${l.cls.toLowerCase()}`:"");
@@ -888,9 +901,13 @@ function openEdit(id){
 }
 
 function selR(type,val,btn){
-  const g=type==="fluxo"?"#rg-fluxo":"#rg-cls";
-  document.querySelectorAll(g+" .rbtn").forEach(b=>b.className="rbtn");
-  btn.className=`rbtn s-${val.toLowerCase()}`;
+  const gMap={fluxo:"#rg-fluxo",cls:"#rg-cls",tipo:"#rg-tipo"};
+  const g=gMap[type]||"#rg-cls";
+  document.querySelectorAll(g+" .rbtn").forEach(b=>{
+    b.className="rbtn";
+  });
+  if(type==="tipo") btn.className="rbtn s-tipo-sel";
+  else btn.className=`rbtn s-${val.toLowerCase()}`;
   fState[type]=val;
 }
 
@@ -906,15 +923,15 @@ async function saveLead(){
     lastDate:document.getElementById("f-date").value,
     fluxo:fState.fluxo||"NS",
     cls:fState.cls||"Q",
+    tipo_perfil:fState.tipo||"publico",
     color:{AQ:"#4ADE80",Q:"#60A5FA",N:"#FCD34D",NQ:"#F87171"}[fState.cls||"Q"]||"#60A5FA",
   };
   try{
     if(editId){
-      // Ao editar, preservar a data atual — só muda ao mover etapa
-      const { lastDate: _, ...dataWithoutDate } = data;
-      await updateLeadDB(editId, dataWithoutDate);
+      // Salva todos os campos incluindo lastDate se o usuário alterou manualmente
+      await updateLeadDB(editId, data);
       const i=leads.findIndex(l=>l.id===editId);
-      if(i>-1) leads[i]={...leads[i],...dataWithoutDate};
+      if(i>-1) leads[i]={...leads[i],...data};
       toast("Lead atualizado!");
     } else {
       const newLead={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
