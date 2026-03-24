@@ -52,9 +52,9 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .card-name{font-weight:600;font-size:13px;color:#fff}
 .badges{display:flex;gap:3px}
 .badge{font-size:9px;border-radius:3px;padding:2px 5px;font-weight:700}
-.bn{background:#60A5FA18;color:#60A5FA;border:1px solid #60A5FA33}
-.bv{background:#A78BFA22;color:#A78BFA;border:1px solid #A78BFA33}
-.bg{background:#4ADE8022;color:#4ADE80;border:1px solid #4ADE8033}
+.bn{background:#60A5FA22;color:#60A5FA;border:1px solid #60A5FA55;font-weight:700}
+.bv{background:#A78BFA22;color:#A78BFA;border:1px solid #A78BFA55;font-weight:700}
+.bg{background:#4ADE8022;color:#4ADE80;border:1px solid #4ADE8055;font-weight:700}
 .baq{background:#4ADE8018;color:#4ADE80}
 .bq{background:#60A5FA18;color:#60A5FA}
 .bn2{background:#FCD34D18;color:#FCD34D}
@@ -233,6 +233,11 @@ let currentUser = null;
     <button id="pipe-search-clear" onclick="clearPipeSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#6B7280;cursor:pointer;font-size:12px">✕</button>
   </div>
   <span style="font-size:11px;color:#6B7280;letter-spacing:.5px;text-transform:uppercase;margin-right:4px">Filtrar:</span>
+  <button class="pipe-cls-filter" data-cls="all" onclick="setPipeFilter('all')" style="border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;border:1px solid #2D3748;background:#1A2030;color:#aaa;transition:all .15s">Todos</button>
+  <button class="pipe-cls-filter" data-cls="AQ" onclick="setPipeFilter('AQ')" style="border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #4ADE8044;background:#4ADE8011;color:#4ADE80;transition:all .15s">AQ</button>
+  <button class="pipe-cls-filter" data-cls="Q"  onclick="setPipeFilter('Q')"  style="border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #60A5FA44;background:#60A5FA11;color:#60A5FA;transition:all .15s">Q</button>
+  <button class="pipe-cls-filter" data-cls="N"  onclick="setPipeFilter('N')"  style="border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #FCD34D44;background:#FCD34D11;color:#FCD34D;transition:all .15s">N</button>
+  <button class="pipe-cls-filter" data-cls="NQ" onclick="setPipeFilter('NQ')" style="border-radius:6px;padding:5px 12px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:700;border:1px solid #F8717144;background:#F8717111;color:#F87171;transition:all .15s">NQ</button>
   <select id="filter-month" onchange="render()" style="background:#1A2030;border:1px solid #2D3748;border-radius:6px;padding:6px 10px;color:#aaa;font-size:12px;font-family:'DM Sans',sans-serif;outline:none">
     <option value="">Todos os meses</option>
     <option value="01">Janeiro</option><option value="02">Fevereiro</option>
@@ -567,7 +572,7 @@ const FU_RULES = {
 
 
 // ── STATE ─────────────────────────────────────────────────────
-let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null,tipo:'publico'}, selectedIds=new Set();
+let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null,tipo:'publico'}, selectedIds=new Set(), pipeClsFilter='all';
 
 // ── SUPABASE DATA LAYER ────────────────────────────────────────
 async function load(){
@@ -662,6 +667,16 @@ function toast(m){ const t=document.getElementById("toast");t.textContent=m;t.cl
 
 function render(){ renderPipe(); renderStats(); renderAlerts(); }
 
+function setPipeFilter(cls){
+  pipeClsFilter = (pipeClsFilter === cls && cls !== 'all') ? 'all' : cls;
+  document.querySelectorAll(".pipe-cls-filter").forEach(btn=>{
+    const isActive = btn.dataset.cls === pipeClsFilter || (pipeClsFilter === 'all' && btn.dataset.cls === 'all');
+    btn.style.outline = isActive ? "2px solid currentColor" : "none";
+    btn.style.opacity = isActive ? "1" : "0.55";
+  });
+  render();
+}
+
 function clearPipeSearch(){
   const el = document.getElementById("pipe-search");
   if(el) el.value = "";
@@ -712,7 +727,8 @@ function renderPipe(){
   pipe.innerHTML="";
   STAGES.forEach((st,idx)=>{
     const allInStage=leads.filter(l=>l.stage===idx);
-    const sl=applyPipeSearch(applyDateFilter(allInStage));
+    const clsFiltered = pipeClsFilter==='all' ? allInStage : allInStage.filter(l=>l.cls===pipeClsFilter);
+    const sl=applyPipeSearch(applyDateFilter(clsFiltered));
     const colSelectedIds=sl.filter(l=>selectedIds.has(l.id));
     const allColSelected=sl.length>0&&colSelectedIds.length===sl.length;
     const col=document.createElement("div"); col.className="col";
@@ -815,7 +831,7 @@ function renderCard(l,stColor){
   const fl=l.fluxo||"NS";
   const cls=l.cls||"Q";
   const dateStr=l.lastDate?new Date(l.lastDate+"T12:00:00").toLocaleDateString("pt-BR"):"";
-  return `<div class="card" style="border-left-color:${fluxColor(fl)};padding:13px 13px 11px 28px" onclick="openDet('${l.id}')">
+  return `<div class="card" style="border-left-color:${fluxColor(fl)};border-left-width:4px;padding:13px 13px 11px 28px" onclick="openDet('${l.id}')">
     <div class="card-top" style="margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px">
         <a href="https://instagram.com/${l.username}" target="_blank" rel="noopener" class="card-name" onclick="event.stopPropagation()" style="font-size:14px;color:#E5E7EB;text-decoration:none;" onmouseover="this.style.color='#C9A96E'" onmouseout="this.style.color='#E5E7EB'">@${l.username}</a>
@@ -1109,6 +1125,10 @@ async function init(){
     await load();
     render();
     checkUrgent();
+    document.querySelectorAll(".pipe-cls-filter").forEach(btn=>{
+      btn.style.opacity = btn.dataset.cls==="all" ? "1" : "0.55";
+      btn.style.outline = btn.dataset.cls==="all" ? "2px solid currentColor" : "none";
+    });
   } catch(e){
     console.error("Erro ao inicializar:", e);
   } finally {
