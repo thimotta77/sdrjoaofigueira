@@ -30,8 +30,7 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .stat span{color:#fff;font-weight:600}
 
 /* ALERT BANNER */
-.abanner{background:#F8717108;border-bottom:1px solid #F8717122;padding:8px 18px;font-size:12px;color:var(--red);display:none;align-items:center;gap:8px}
-.abanner.show{display:flex}
+
 
 /* PIPELINE */
 .pipe{display:flex;gap:10px;padding:14px;min-width:max-content;align-items:flex-start}
@@ -194,7 +193,7 @@ let currentUser = null;
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
-<div class="abanner" id="abanner">⏰ <span id="atext"></span></div>
+
 
 <!-- HEADER -->
 <div class="header">
@@ -572,7 +571,7 @@ const FU_RULES = {
 
 
 // ── STATE ─────────────────────────────────────────────────────
-let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null,tipo:'publico'}, selectedIds=new Set(), pipeClsFilter='all';
+let leads=[], editId=null, detId=null, fState={fluxo:null,cls:null,tipo:'publico'}, selectedIds=new Set(), pipeClsFilter='all', statFilter=null;
 
 // ── SUPABASE DATA LAYER ────────────────────────────────────────
 async function load(){
@@ -646,12 +645,23 @@ function fluxColor(f){ return {NS:"#60A5FA",VS:"#A78BFA",GS:"#4ADE80"}[f]||"#60A
 function fuStatus(lead){
   const d=days(lead.lastDate);
   const rules=FU_RULES[lead.stage]||[];
-  let status={msg:`${d}d — ok`,lv:"ok",days:d};
-  for(const r of [...rules].reverse()){
-    if(d>=r.d){status={msg:`${r.t} (${d}d)`,lv:r.lv,days:d};break;}
+  const checks = lead.timeline_checks||{};
+
+  if(d===0&&lead.stage===0) return {msg:"Novo — pronto para contato",lv:"new",days:d};
+
+  // Encontrar primeiro item pendente (não marcado)
+  for(let i=0; i<rules.length; i++){
+    const key = "stage_"+lead.stage+"_item_"+i;
+    const done = checks[key]===true;
+    if(!done){
+      // Próximo pendente — usar urgência por tempo ou por ser o próximo
+      const r = rules[i];
+      const lv = d>=r.d ? r.lv : (i===0?"ok":"ok");
+      return {msg:`${r.t}`,lv,days:d};
+    }
   }
-  if(d===0&&lead.stage===0) status={msg:"Novo — pronto para contato",lv:"new"};
-  return status;
+  // Todos marcados como feitos
+  return {msg:"✅ Etapa concluída",lv:"ok",days:d};
 }
 
 function copyAt(username, e){
@@ -665,7 +675,7 @@ function toast(m){ const t=document.getElementById("toast");t.textContent=m;t.cl
 
 // ── RENDER ────────────────────────────────────────────────────
 
-function render(){ renderPipe(); renderStats(); renderAlerts(); }
+function render(){ renderPipe(); renderStats(); }
 
 function setPipeFilter(cls){
   pipeClsFilter = (pipeClsFilter === cls && cls !== 'all') ? 'all' : cls;
@@ -728,7 +738,10 @@ function renderPipe(){
   STAGES.forEach((st,idx)=>{
     const allInStage=leads.filter(l=>l.stage===idx);
     const clsFiltered = pipeClsFilter==='all' ? allInStage : allInStage.filter(l=>l.cls===pipeClsFilter);
-    const sl=applyPipeSearch(applyDateFilter(clsFiltered));
+    const statFiltered = statFilter===null ? clsFiltered
+      : statFilter==='urgent' ? clsFiltered.filter(l=>fuStatus(l).lv==="alert")
+      : clsFiltered.filter(l=>l.stage===5);
+    const sl=applyPipeSearch(applyDateFilter(statFiltered));
     const colSelectedIds=sl.filter(l=>selectedIds.has(l.id));
     const allColSelected=sl.length>0&&colSelectedIds.length===sl.length;
     const col=document.createElement("div"); col.className="col";
@@ -862,20 +875,20 @@ function renderStats(){
   const total=leads.length;
   const urgent=leads.filter(l=>fuStatus(l).lv==="alert").length;
   const sched=leads.filter(l=>l.stage===5).length;
+  const baseStyle="cursor:pointer;border-radius:6px;padding:4px 10px;font-size:11px;color:var(--mt);transition:all .2s;border:1px solid transparent;";
+  const activeStyle="border-color:#C9A96E22;background:#C9A96E0A;";
   document.getElementById("stats").innerHTML=`
-    <div class="stat">Total: <span>${total}</span></div>
-    <div class="stat">🔴 Urgentes: <span style="color:var(--red)">${urgent}</span></div>
-    <div class="stat">✅ Agendados: <span style="color:var(--grn)">${sched}</span></div>`;
+    <div class="stat" style="${baseStyle}${statFilter===null?activeStyle:''}" onclick="setStatFilter(null)">Total: <span>${total}</span></div>
+    <div class="stat" style="${baseStyle}${statFilter==='urgent'?activeStyle:''}" onclick="setStatFilter('urgent')">🔴 Urgentes: <span style="color:var(--red)">${urgent}</span></div>
+    <div class="stat" style="${baseStyle}${statFilter==='sched'?activeStyle:''}" onclick="setStatFilter('sched')">✅ Agendados: <span style="color:var(--grn)">${sched}</span></div>`;
 }
 
-function renderAlerts(){
-  const urgent=leads.filter(l=>fuStatus(l).lv==="alert");
-  const b=document.getElementById("abanner");
-  if(urgent.length>0){
-    b.classList.add("show");
-    document.getElementById("atext").textContent=`${urgent.length} lead${urgent.length>1?"s precisam":"precisa"} de follow up urgente: ${urgent.slice(0,3).map(l=>"@"+l.username).join(", ")}${urgent.length>3?"...":""}`;
-  } else { b.classList.remove("show"); }
+function setStatFilter(type){
+  statFilter = (statFilter===type) ? null : type;
+  render();
 }
+
+
 
 // ── ADD/EDIT MODAL ────────────────────────────────────────────
 function openAdd(){
@@ -1124,8 +1137,7 @@ async function init(){
     currentUser = session.user;
     await load();
     render();
-    checkUrgent();
-    document.querySelectorAll(".pipe-cls-filter").forEach(btn=>{
+        document.querySelectorAll(".pipe-cls-filter").forEach(btn=>{
       btn.style.opacity = btn.dataset.cls==="all" ? "1" : "0.55";
       btn.style.outline = btn.dataset.cls==="all" ? "2px solid currentColor" : "none";
     });
