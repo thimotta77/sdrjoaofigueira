@@ -829,8 +829,15 @@ function setFilter(c){
 async function delLead(id){
   const lead = leads.find(l=>l.id===id);
   if(!lead) return;
-  if(!confirm("Excluir @" + lead.username + " do Qualificador?\n\nEsta ação não pode ser desfeita.")) return;
-  try{ await deleteLeadDB(id); leads=leads.filter(l=>l.id!==id); updateCount(); renderLeads(); toast("🗑️ Lead excluído."); }catch(e){ toast("❌ Erro ao excluir."); }
+  if(!confirm("Excluir @" + lead.username + "?\n\nEsta ação removerá o lead do Qualificador e do Pipeline.")) return;
+  try{
+    await deleteLeadDB(id);
+    // Remover também do Pipeline
+    await sb.from("pipeline_leads").delete().eq("username", lead.username);
+    leads=leads.filter(l=>l.id!==id);
+    updateCount(); renderLeads();
+    toast("🗑️ @"+lead.username+" excluído do Qualificador e do Pipeline.");
+  }catch(e){ toast("❌ Erro ao excluir."); }
 }
 
 async function sendToPipeline(id){

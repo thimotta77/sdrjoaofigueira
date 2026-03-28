@@ -638,30 +638,35 @@ async function batchUpdateStage(ids, stage, lastDate){
 }
 
 function days(dt){ if(!dt) return 0; return Math.floor((Date.now()-new Date(dt).getTime())/(864e5)); }
+function daysInPipeline(lead){ return days(lead.createdAt||lead.lastDate); }
+function daysInStage(lead){ return days(lead.lastDate); }
 function scColor(s){ return s>=8?"#4ADE80":s>=6?"#60A5FA":s>=4?"#FCD34D":"#F87171"; }
 function clsColor(c){ return {EQ:"#4ADE80",AQ:"#4ADE80",Q:"#60A5FA",N:"#FCD34D",NQ:"#F87171"}[c]||"#60A5FA"; }
 function fluxColor(f){ return {NS:"#60A5FA",VS:"#A78BFA",GS:"#4ADE80"}[f]||"#60A5FA"; }
 
 function fuStatus(lead){
-  const d=days(lead.lastDate);
-  const rules=FU_RULES[lead.stage]||[];
+  const dStage = daysInStage(lead);   // dias na etapa atual (para urgência)
+  const dTotal = daysInPipeline(lead); // dias totais no pipeline (para o badge)
+  const rules = FU_RULES[lead.stage]||[];
   const checks = lead.timeline_checks||{};
 
-  if(d===0&&lead.stage===0) return {msg:"Novo — pronto para contato",lv:"new",days:d};
+  if(lead.stage===0) return {msg:"Pronto para contato",lv:"new",days:dTotal};
+  if(lead.stage===9) return {msg:"Descartado",lv:"ok",days:dTotal};
+  if(!rules.length)  return {msg:`${dStage}d na etapa`,lv:"ok",days:dTotal};
 
-  // Encontrar primeiro item pendente (não marcado)
+  // Encontrar o primeiro item NÃO marcado como feito
   for(let i=0; i<rules.length; i++){
-    const key = "stage_"+lead.stage+"_item_"+i;
-    const done = checks[key]===true;
+    const key   = "stage_"+lead.stage+"_item_"+i;
+    const done  = checks[key]===true;
     if(!done){
-      // Próximo pendente — usar urgência por tempo ou por ser o próximo
-      const r = rules[i];
-      const lv = d>=r.d ? r.lv : (i===0?"ok":"ok");
-      return {msg:`${r.t}`,lv,days:d};
+      const r  = rules[i];
+      // Urgência baseada em dias NA ETAPA vs prazo do item
+      const lv = dStage >= r.d ? r.lv : "ok";
+      return {msg: r.t, lv, days: dTotal};
     }
   }
-  // Todos marcados como feitos
-  return {msg:"✅ Etapa concluída",lv:"ok",days:d};
+  // Todos os itens marcados
+  return {msg:"✅ Etapa concluída", lv:"ok", days: dTotal};
 }
 
 function copyAt(username, e){
@@ -961,6 +966,8 @@ async function saveLead(){
       await updateLeadDB(editId, data);
       const i=leads.findIndex(l=>l.id===editId);
       if(i>-1) leads[i]={...leads[i],...data};
+      // Sincronizar edição de volta ao Qualificador (se existir lá)
+      await syncToQualificador(editId, leads.find(l=>l.id===editId));
       toast("Lead atualizado!");
     } else {
       const newLead={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
@@ -970,6 +977,21 @@ async function saveLead(){
     }
     render(); closeM("modal-add");
   }catch(e){ toast("❌ Erro ao salvar. Tente novamente."); }
+}
+
+async function syncToQualificador(pipelineId, lead){
+  if(!lead) return;
+  try{
+    // Verifica se existe no qualificador pelo username
+    const { data } = await sb.from("leads_cdp")
+      .select("id").eq("username", lead.username).limit(1);
+    if(!data || !data.length) return; // não existe no qualificador
+    await sb.from("leads_cdp").update({
+      prof: lead.prof||"",
+      fluxo: lead.fluxo||"NS",
+      tipo_perfil: lead.tipo_perfil||"publico",
+    }).eq("username", lead.username);
+  }catch(e){ console.error("syncToQualificador error:", e); }
 }
 
 async function delLead(){
@@ -1068,7 +1090,18 @@ async function moveLead(stage){
 }
 
 function editFromDet(){ closeM("modal-det"); openEdit(detId); }
-async function delFromDet(){ if(!confirm("Excluir lead?")) return; try{ await deleteLeadDB(detId); leads=leads.filter(l=>l.id!==detId); render(); closeM("modal-det"); toast("Excluído."); }catch(e){ toast("❌ Erro ao excluir."); } }
+async function delFromDet(){
+  const lead = leads.find(l=>l.id===detId);
+  const name = lead ? "@"+lead.username : "este lead";
+  if(!confirm("Excluir "+name+" do Pipeline?\n\nEsta ação removerá o lead do Pipeline e do Qualificador.")) return;
+  try{
+    await deleteLeadDB(detId);
+    // Remover também do Qualificador
+    if(lead) await sb.from("leads_cdp").delete().eq("username", lead.username);
+    leads=leads.filter(l=>l.id!==detId);
+    render(); closeM("modal-det"); toast("🗑️ Lead excluído do Pipeline e do Qualificador.");
+  }catch(e){ toast("❌ Erro ao excluir."); }
+}
 function closeM(id){ document.getElementById(id).style.display="none"; }
 
 document.querySelectorAll(".overlay").forEach(o=>{
